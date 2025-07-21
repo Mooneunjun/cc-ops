@@ -1,7 +1,12 @@
 "use client";
 
-import { AppSidebar } from "@/components/app-sidebar";
-import { Badge } from "@/components/ui/badge";
+import { useState } from "react";
+import {
+  SidebarInset,
+  SidebarProvider,
+  SidebarTrigger,
+} from "@/components/ui/sidebar";
+import { Separator } from "@/components/ui/separator";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -10,30 +15,16 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
-import { Button } from "@/components/ui/button";
+import { AppSidebar } from "@/components/app-sidebar";
 import {
   Card,
+  CardContent,
+  CardDescription,
   CardHeader,
   CardTitle,
-  CardDescription,
-  CardContent,
-  CardAction,
 } from "@/components/ui/card";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Input } from "@/components/ui/input";
-import { Separator } from "@/components/ui/separator";
-import {
-  SidebarInset,
-  SidebarProvider,
-  SidebarTrigger,
-} from "@/components/ui/sidebar";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import {
   Table,
   TableBody,
@@ -42,26 +33,11 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import {
-  Calendar,
-  Clock,
-  Hash,
-  Plus,
-  Edit3,
-  Trash2,
-  PlayCircle,
-  PauseCircle,
-  CheckCircle,
-  AlertCircle,
-  MoreHorizontal,
-  Search,
-  LayoutGrid,
-  TableProperties,
-  FileText,
-  Play,
-  Pause,
-} from "lucide-react";
-import { useState } from "react";
+import { Plus, Clock, Hash, Calendar } from "lucide-react";
+import { ScheduleModal } from "@/components/schedule-modal";
+import { ActionButtons } from "@/components/action-buttons";
+import { StatusStats, statusConfig } from "@/components/status-stats";
+import { SearchAndViewToggle } from "@/components/search-and-view-toggle";
 
 // Mock 데이터
 const scheduledMessages = [
@@ -115,38 +91,6 @@ const scheduledMessages = [
   },
 ];
 
-// 상태 설정
-const statusConfig = {
-  active: {
-    label: "Active",
-    color: "bg-green-500",
-    badgeClass: "bg-green-100 text-green-700",
-    icon: PlayCircle,
-    text: "Active",
-  },
-  paused: {
-    label: "Paused",
-    color: "bg-yellow-500",
-    badgeClass: "bg-yellow-100 text-yellow-700",
-    icon: PauseCircle,
-    text: "Paused",
-  },
-  completed: {
-    label: "Completed",
-    color: "bg-blue-500",
-    badgeClass: "bg-blue-100 text-blue-700",
-    icon: CheckCircle,
-    text: "Completed",
-  },
-  error: {
-    label: "Error",
-    color: "bg-red-500",
-    badgeClass: "bg-red-100 text-red-700",
-    icon: AlertCircle,
-    text: "Error",
-  },
-};
-
 export default function Page() {
   const [searchTerm, setSearchTerm] = useState("");
   const [viewMode, setViewMode] = useState("card");
@@ -172,6 +116,16 @@ export default function Page() {
     );
   };
 
+  const formatDateTime = (dateTimeString: string) => {
+    return new Date(dateTimeString).toLocaleString("ko-KR", {
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  };
+
   const handleAction = (
     action: string,
     messageId: number,
@@ -195,60 +149,11 @@ export default function Page() {
                   <CardTitle className="text-lg">{message.title}</CardTitle>
                   {getStatusBadge(message.status as keyof typeof statusConfig)}
                 </div>
-                <CardDescription className="mt-2">
+                <CardDescription className="mt-2 line-clamp-2">
                   {message.message}
                 </CardDescription>
               </div>
-              <CardAction>
-                <div className="flex gap-1">
-                  {/* Pause/Resume 버튼 */}
-                  {(message.status === "active" ||
-                    message.status === "paused") && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() =>
-                        handleAction(
-                          message.status === "active" ? "pause" : "resume",
-                          message.id,
-                          message.status
-                        )
-                      }
-                    >
-                      {message.status === "active" ? (
-                        <Pause className="h-4 w-4" />
-                      ) : (
-                        <Play className="h-4 w-4" />
-                      )}
-                    </Button>
-                  )}
-
-                  {/* 액션 드롭다운 */}
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="sm">
-                        <MoreHorizontal className="h-4 w-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="w-40">
-                      <DropdownMenuItem
-                        onClick={() => handleAction("edit", message.id)}
-                      >
-                        <Edit3 className="h-4 w-4 mr-2" />
-                        수정
-                      </DropdownMenuItem>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem
-                        onClick={() => handleAction("delete", message.id)}
-                        variant="destructive"
-                      >
-                        <Trash2 className="h-4 w-4 mr-2" />
-                        삭제
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </div>
-              </CardAction>
+              <ActionButtons message={message} onAction={handleAction} />
             </div>
           </CardHeader>
           <CardContent className="pt-0">
@@ -259,9 +164,7 @@ export default function Page() {
               </div>
               <div className="flex items-center gap-1">
                 <Calendar className="h-4 w-4" />
-                <span>
-                  {new Date(message.scheduledTime).toLocaleString("ko-KR")}
-                </span>
+                <span>{formatDateTime(message.scheduledTime)}</span>
               </div>
               <div className="flex items-center gap-1">
                 <Clock className="h-4 w-4" />
@@ -275,107 +178,67 @@ export default function Page() {
   );
 
   const renderTableView = () => (
-    <Card>
+    <div className="rounded-md border">
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead>제목</TableHead>
-            <TableHead>상태</TableHead>
-            <TableHead>채널</TableHead>
-            <TableHead>예정 시간</TableHead>
-            <TableHead>빈도</TableHead>
-            <TableHead className="w-[120px]">액션</TableHead>
+            <TableHead className="w-[25%] px-4">제목</TableHead>
+            <TableHead className="w-[10%] px-4">상태</TableHead>
+            <TableHead className="w-[12%] px-4">채널</TableHead>
+            <TableHead className="w-[20%] px-4">예정 시간</TableHead>
+            <TableHead className="w-[15%] px-4">빈도</TableHead>
+            <TableHead className="w-[18%] px-4 text-right">액션</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
-          {filteredMessages.map((message) => (
-            <TableRow key={message.id}>
-              <TableCell>
-                <div>
-                  <div className="font-medium">{message.title}</div>
-                  <div className="text-sm text-muted-foreground truncate max-w-[300px]">
-                    {message.message}
-                  </div>
-                </div>
-              </TableCell>
-              <TableCell>
-                {getStatusBadge(message.status as keyof typeof statusConfig)}
-              </TableCell>
-              <TableCell>
-                <div className="flex items-center gap-1">
-                  <Hash className="h-4 w-4 text-muted-foreground" />
-                  {message.channel}
-                </div>
-              </TableCell>
-              <TableCell>
-                <div className="flex items-center gap-1">
-                  <Calendar className="h-4 w-4 text-muted-foreground" />
-                  {new Date(message.scheduledTime).toLocaleString("ko-KR")}
-                </div>
-              </TableCell>
-              <TableCell>
-                <div className="flex items-center gap-1">
-                  <Clock className="h-4 w-4 text-muted-foreground" />
-                  {message.frequency}
-                </div>
-              </TableCell>
-              <TableCell>
-                <div className="flex justify-end gap-1 w-full">
-                  {/* Pause/Resume 버튼을 위한 고정 공간 */}
-                  <div className="w-8 flex justify-center">
-                    {(message.status === "active" ||
-                      message.status === "paused") && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() =>
-                          handleAction(
-                            message.status === "active" ? "pause" : "resume",
-                            message.id,
-                            message.status
-                          )
-                        }
-                      >
-                        {message.status === "active" ? (
-                          <Pause className="h-4 w-4" />
-                        ) : (
-                          <Play className="h-4 w-4" />
-                        )}
-                      </Button>
-                    )}
-                  </div>
-
-                  {/* 액션 드롭다운 */}
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="sm">
-                        <MoreHorizontal className="h-4 w-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="w-40">
-                      <DropdownMenuItem
-                        onClick={() => handleAction("edit", message.id)}
-                      >
-                        <Edit3 className="h-4 w-4 mr-2" />
-                        수정
-                      </DropdownMenuItem>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem
-                        onClick={() => handleAction("delete", message.id)}
-                        variant="destructive"
-                      >
-                        <Trash2 className="h-4 w-4 mr-2" />
-                        삭제
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </div>
+          {filteredMessages.length === 0 ? (
+            <TableRow>
+              <TableCell colSpan={6} className="h-24 text-center px-4">
+                {searchTerm
+                  ? "검색 결과가 없습니다."
+                  : "예정된 메시지가 없습니다."}
               </TableCell>
             </TableRow>
-          ))}
+          ) : (
+            filteredMessages.map((message) => (
+              <TableRow key={message.id}>
+                <TableCell className="px-4">
+                  <div className="space-y-1">
+                    <p className="font-medium text-sm leading-none">
+                      {message.title}
+                    </p>
+                    <p className="text-xs text-muted-foreground line-clamp-2">
+                      {message.message}
+                    </p>
+                  </div>
+                </TableCell>
+                <TableCell className="px-4">
+                  {getStatusBadge(message.status as keyof typeof statusConfig)}
+                </TableCell>
+                <TableCell className="px-4">
+                  <code className="text-xs bg-muted px-1.5 py-0.5 rounded font-mono">
+                    {message.channel}
+                  </code>
+                </TableCell>
+                <TableCell className="px-4">
+                  <div className="text-sm">
+                    {formatDateTime(message.scheduledTime)}
+                  </div>
+                </TableCell>
+                <TableCell className="px-4">
+                  <span className="text-xs text-muted-foreground">
+                    {message.frequency}
+                  </span>
+                </TableCell>
+                <TableCell className="px-4">
+                  <ActionButtons message={message} onAction={handleAction} />
+                </TableCell>
+              </TableRow>
+            ))
+          )}
         </TableBody>
       </Table>
-    </Card>
+    </div>
   );
 
   return (
@@ -414,56 +277,24 @@ export default function Page() {
                 슬랙 메시지 자동화 스케줄을 관리하세요
               </p>
             </div>
-            <Button className="gap-2">
-              <Plus className="h-4 w-4" />새 스케줄 추가
-            </Button>
+
+            <ScheduleModal>
+              <Button className="gap-2">
+                <Plus className="h-4 w-4" />새 스케줄 추가
+              </Button>
+            </ScheduleModal>
           </div>
 
           {/* 상태별 통계 */}
-          <div className="flex items-center gap-6 text-sm">
-            {(
-              Object.entries(statusConfig) as [
-                keyof typeof statusConfig,
-                (typeof statusConfig)[keyof typeof statusConfig]
-              ][]
-            ).map(([key, config]) => (
-              <div key={key} className="flex items-center gap-2">
-                <div className={`w-2 h-2 rounded-full ${config.color}`} />
-                <span className="text-muted-foreground">{config.label}</span>
-                <span className="font-medium">{getStatusCount(key)}</span>
-              </div>
-            ))}
-          </div>
+          <StatusStats getStatusCount={getStatusCount} />
 
           {/* 검색 및 보기 형식 */}
-          <div className="flex items-center justify-between gap-4">
-            <div className="relative flex-1 max-w-md">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="메시지 제목, 내용, 채널로 검색..."
-                className="pl-10"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
-            </div>
-
-            <Tabs value={viewMode} onValueChange={setViewMode}>
-              <TabsList>
-                <TabsTrigger value="card" className="gap-2">
-                  <LayoutGrid className="h-4 w-4" />
-                  카드형
-                </TabsTrigger>
-                <TabsTrigger value="table" className="gap-2">
-                  <TableProperties className="h-4 w-4" />
-                  테이블형
-                </TabsTrigger>
-                <TabsTrigger value="log" className="gap-2">
-                  <FileText className="h-4 w-4" />
-                  로그
-                </TabsTrigger>
-              </TabsList>
-            </Tabs>
-          </div>
+          <SearchAndViewToggle
+            searchTerm={searchTerm}
+            onSearchChange={setSearchTerm}
+            viewMode={viewMode}
+            onViewModeChange={setViewMode}
+          />
 
           {/* 메시지 리스트 */}
           {viewMode === "card" && renderCardView()}
@@ -488,9 +319,11 @@ export default function Page() {
                   : "새로운 슬랙 메시지 자동화 스케줄을 추가해보세요"}
               </p>
               {!searchTerm && (
-                <Button>
-                  <Plus className="h-4 w-4 mr-2" />첫 번째 스케줄 만들기
-                </Button>
+                <ScheduleModal>
+                  <Button>
+                    <Plus className="h-4 w-4 mr-2" />첫 번째 스케줄 만들기
+                  </Button>
+                </ScheduleModal>
               )}
             </div>
           )}
