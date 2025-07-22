@@ -38,6 +38,10 @@ export function TimePicker({ date, setDate, className }: TimePickerProps) {
 
   const adjustHour = (increment: number) => {
     const newDate = date ? new Date(date) : new Date();
+    // date가 없을 때는 디폴트 12:00:00으로 설정
+    if (!date) {
+      newDate.setHours(12, 0, 0, 0);
+    }
     let newHour = (currentHour + increment + 24) % 24;
     newDate.setHours(newHour, newDate.getMinutes(), 0, 0);
     setDate(newDate);
@@ -45,6 +49,10 @@ export function TimePicker({ date, setDate, className }: TimePickerProps) {
 
   const adjustMinute = (increment: number) => {
     const newDate = date ? new Date(date) : new Date();
+    // date가 없을 때는 디폴트 12:00:00으로 설정
+    if (!date) {
+      newDate.setHours(12, 0, 0, 0);
+    }
     let newMinute = (currentMinute + increment + 60) % 60;
     newDate.setMinutes(newMinute, 0, 0);
     setDate(newDate);
@@ -54,6 +62,10 @@ export function TimePicker({ date, setDate, className }: TimePickerProps) {
     const hour = parseInt(value);
     if (!isNaN(hour) && hour >= 0 && hour <= 23) {
       const newDate = date ? new Date(date) : new Date();
+      // date가 없을 때는 디폴트 12:00:00으로 설정
+      if (!date) {
+        newDate.setHours(12, 0, 0, 0);
+      }
       newDate.setHours(hour, newDate.getMinutes(), 0, 0);
       setDate(newDate);
     }
@@ -63,6 +75,10 @@ export function TimePicker({ date, setDate, className }: TimePickerProps) {
     const minute = parseInt(value);
     if (!isNaN(minute) && minute >= 0 && minute <= 59) {
       const newDate = date ? new Date(date) : new Date();
+      // date가 없을 때는 디폴트 12:00:00으로 설정
+      if (!date) {
+        newDate.setHours(12, 0, 0, 0);
+      }
       newDate.setMinutes(minute, 0, 0);
       setDate(newDate);
     }
