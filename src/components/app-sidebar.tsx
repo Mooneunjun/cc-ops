@@ -43,61 +43,61 @@ const data = {
       items: [
         {
           title: "Scheduled",
-          url: "#",
+          url: "/workflows/schedule",
         },
         {
           title: "History",
-          url: "#",
+          url: "/workflows/history",
         },
         {
           title: "Settings",
-          url: "#",
+          url: "/workflows/settings",
         },
       ],
     },
     {
       title: "Documentation",
-      url: "#",
+      url: "/docs",
       icon: BookOpen,
       items: [
         {
           title: "Introduction",
-          url: "#",
+          url: "/docs/introduction",
         },
         {
           title: "Get Started",
-          url: "#",
+          url: "/docs/get-started",
         },
         {
           title: "Tutorials",
-          url: "#",
+          url: "/docs/tutorials",
         },
         {
           title: "Changelog",
-          url: "#",
+          url: "/docs/changelog",
         },
       ],
     },
     {
       title: "Settings",
-      url: "#",
+      url: "/settings",
       icon: Settings2,
       items: [
         {
           title: "General",
-          url: "#",
+          url: "/settings/general",
         },
         {
           title: "Team",
-          url: "#",
+          url: "/settings/team",
         },
         {
           title: "Billing",
-          url: "#",
+          url: "/settings/billing",
         },
         {
           title: "Limits",
-          url: "#",
+          url: "/settings/limits",
         },
       ],
     },
