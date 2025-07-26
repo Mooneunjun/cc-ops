@@ -255,11 +255,11 @@ export default function Page() {
             <Breadcrumb>
               <BreadcrumbList>
                 <BreadcrumbItem className="hidden md:block">
-                  <BreadcrumbLink href="#">Workflows</BreadcrumbLink>
+                  <BreadcrumbLink href="#">Settings</BreadcrumbLink>
                 </BreadcrumbItem>
                 <BreadcrumbSeparator className="hidden md:block" />
                 <BreadcrumbItem>
-                  <BreadcrumbPage>Scheduled</BreadcrumbPage>
+                  <BreadcrumbPage>Slack-Scheduler</BreadcrumbPage>
                 </BreadcrumbItem>
               </BreadcrumbList>
             </Breadcrumb>

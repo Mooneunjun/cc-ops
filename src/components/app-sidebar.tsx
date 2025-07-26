@@ -36,22 +36,18 @@ const data = {
   },
   navMain: [
     {
-      title: "Workflows",
+      title: "Analytics",
       url: "#",
       icon: SquareTerminal,
       isActive: true,
       items: [
         {
-          title: "Scheduled",
-          url: "/workflows/schedule",
+          title: "TX Analysis",
+          url: "/analytics/tx-analysis",
         },
         {
           title: "History",
-          url: "/workflows/history",
-        },
-        {
-          title: "Settings",
-          url: "/workflows/settings",
+          url: "/analytics/history",
         },
       ],
     },
@@ -98,6 +94,10 @@ const data = {
         {
           title: "Limits",
           url: "/settings/limits",
+        },
+        {
+          title: "Slack-Scheduler",
+          url: "/settings/slack-scheduler",
         },
       ],
     },
