@@ -1,0 +1,17 @@
+{
+  "css.validate": false,
+  "less.validate": false,
+  "scss.validate": false,
+  "tailwindCSS.includeLanguages": {
+    "css": "css"
+  },
+  "tailwindCSS.experimental.classRegex": [
+    ["@apply\\s+([^;}]+)", "([^;}]+)"],
+    ["@layer\\s+\\w+\\s*{[^}]*@apply\\s+([^;}]+)", "([^;}]+)"]
+  ],
+  "files.associations": {
+    "*.css": "tailwindcss"
+  },
+  "css.customData": [".vscode/css_custom_data.json"],
+  "tailwindCSS.experimental.configFile": "tailwind.config.js"
+}

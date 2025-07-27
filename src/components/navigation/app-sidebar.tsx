@@ -6,17 +6,14 @@ import {
   Bot,
   Command,
   Frame,
-  LifeBuoy,
   Map,
   PieChart,
-  Send,
   Settings2,
   SquareTerminal,
 } from "lucide-react";
 
 import { NavMain } from "@/components/navigation/nav-main";
 import { NavProjects } from "@/components/navigation/nav-projects";
-import { NavSecondary } from "@/components/navigation/nav-secondary";
 import { NavUser } from "@/components/navigation/nav-user";
 import {
   Sidebar,
@@ -102,18 +99,6 @@ const data = {
       ],
     },
   ],
-  navSecondary: [
-    {
-      title: "Support",
-      url: "#",
-      icon: LifeBuoy,
-    },
-    {
-      title: "Feedback",
-      url: "#",
-      icon: Send,
-    },
-  ],
   projects: [
     {
       name: "Design Engineering",
@@ -162,10 +147,9 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       <SidebarContent>
         <NavMain items={data.navMain} />
         <NavProjects projects={data.projects} />
-        <NavSecondary items={data.navSecondary} className="mt-auto" />
       </SidebarContent>
       <SidebarFooter>
-        <NavUser user={data.user} />
+        <NavUser />
       </SidebarFooter>
     </Sidebar>
   );

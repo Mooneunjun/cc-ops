@@ -8,8 +8,13 @@ export default function LoginPage() {
       <div className="flex flex-col gap-4 p-6 md:p-10">
         <div className="flex justify-center gap-2 md:justify-start">
           <a href="#" className="flex items-center gap-2 font-medium">
-            <div className="bg-primary text-primary-foreground flex size-6 items-center justify-center rounded-md">
-              <GalleryVerticalEnd className="size-4" />
+            <div className="bg-white text-black flex aspect-square size-8 items-center justify-center rounded-lg">
+              {/* wirebarley svg */}
+              <img
+                src="/wirebarley.svg"
+                alt="WireBarley"
+                className="size-8 rounded-md"
+              />
             </div>
             WireBarley CCT
           </a>

@@ -6,6 +6,7 @@ import {
   SidebarProvider,
   SidebarTrigger,
 } from "@/components/ui/sidebar";
+import { ProtectedRoute } from "@/components/common/protected-route";
 import { Separator } from "@/components/ui/separator";
 import {
   Breadcrumb,
@@ -245,89 +246,91 @@ export default function Page() {
     <SidebarProvider>
       <AppSidebar />
       <SidebarInset>
-        <header className="flex h-16 shrink-0 items-center gap-2">
-          <div className="flex items-center gap-2 px-4">
-            <SidebarTrigger className="-ml-1" />
-            <Separator
-              orientation="vertical"
-              className="mr-2 data-[orientation=vertical]:h-4"
+        <ProtectedRoute>
+          <header className="flex h-16 shrink-0 items-center gap-2">
+            <div className="flex items-center gap-2 px-4">
+              <SidebarTrigger className="-ml-1" />
+              <Separator
+                orientation="vertical"
+                className="mr-2 data-[orientation=vertical]:h-4"
+              />
+              <Breadcrumb>
+                <BreadcrumbList>
+                  <BreadcrumbItem className="hidden md:block">
+                    <BreadcrumbLink href="#">Settings</BreadcrumbLink>
+                  </BreadcrumbItem>
+                  <BreadcrumbSeparator className="hidden md:block" />
+                  <BreadcrumbItem>
+                    <BreadcrumbPage>Slack-Scheduler</BreadcrumbPage>
+                  </BreadcrumbItem>
+                </BreadcrumbList>
+              </Breadcrumb>
+            </div>
+          </header>
+
+          <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
+            {/* 헤더 */}
+            <div className="flex items-center justify-between">
+              <div>
+                <h1 className="text-2xl font-bold tracking-tight">
+                  예정된 메시지
+                </h1>
+                <p className="text-muted-foreground">
+                  슬랙 메시지 자동화 스케줄을 관리하세요
+                </p>
+              </div>
+
+              <ScheduleModal>
+                <Button className="gap-2">
+                  <Plus className="h-4 w-4" />새 스케줄 추가
+                </Button>
+              </ScheduleModal>
+            </div>
+
+            {/* 상태별 통계 */}
+            <StatusStats getStatusCount={getStatusCount} />
+
+            {/* 검색 및 보기 형식 */}
+            <SearchAndViewToggle
+              searchTerm={searchTerm}
+              onSearchChange={setSearchTerm}
+              viewMode={viewMode}
+              onViewModeChange={setViewMode}
             />
-            <Breadcrumb>
-              <BreadcrumbList>
-                <BreadcrumbItem className="hidden md:block">
-                  <BreadcrumbLink href="#">Settings</BreadcrumbLink>
-                </BreadcrumbItem>
-                <BreadcrumbSeparator className="hidden md:block" />
-                <BreadcrumbItem>
-                  <BreadcrumbPage>Slack-Scheduler</BreadcrumbPage>
-                </BreadcrumbItem>
-              </BreadcrumbList>
-            </Breadcrumb>
+
+            {/* 메시지 리스트 */}
+            {viewMode === "card" && renderCardView()}
+            {viewMode === "table" && renderTableView()}
+            {viewMode === "log" && (
+              <div className="text-center py-16 text-muted-foreground">
+                로그 뷰는 곧 구현될 예정입니다.
+              </div>
+            )}
+
+            {/* 빈 상태 */}
+            {filteredMessages.length === 0 && (
+              <div className="flex flex-col items-center justify-center py-16">
+                <h3 className="text-lg font-semibold mb-2">
+                  {searchTerm
+                    ? "검색 결과가 없습니다"
+                    : "예정된 메시지가 없습니다"}
+                </h3>
+                <p className="text-muted-foreground text-center mb-4">
+                  {searchTerm
+                    ? "다른 검색어를 사용해보세요"
+                    : "새로운 슬랙 메시지 자동화 스케줄을 추가해보세요"}
+                </p>
+                {!searchTerm && (
+                  <ScheduleModal>
+                    <Button>
+                      <Plus className="h-4 w-4 mr-2" />첫 번째 스케줄 만들기
+                    </Button>
+                  </ScheduleModal>
+                )}
+              </div>
+            )}
           </div>
-        </header>
-
-        <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
-          {/* 헤더 */}
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-2xl font-bold tracking-tight">
-                예정된 메시지
-              </h1>
-              <p className="text-muted-foreground">
-                슬랙 메시지 자동화 스케줄을 관리하세요
-              </p>
-            </div>
-
-            <ScheduleModal>
-              <Button className="gap-2">
-                <Plus className="h-4 w-4" />새 스케줄 추가
-              </Button>
-            </ScheduleModal>
-          </div>
-
-          {/* 상태별 통계 */}
-          <StatusStats getStatusCount={getStatusCount} />
-
-          {/* 검색 및 보기 형식 */}
-          <SearchAndViewToggle
-            searchTerm={searchTerm}
-            onSearchChange={setSearchTerm}
-            viewMode={viewMode}
-            onViewModeChange={setViewMode}
-          />
-
-          {/* 메시지 리스트 */}
-          {viewMode === "card" && renderCardView()}
-          {viewMode === "table" && renderTableView()}
-          {viewMode === "log" && (
-            <div className="text-center py-16 text-muted-foreground">
-              로그 뷰는 곧 구현될 예정입니다.
-            </div>
-          )}
-
-          {/* 빈 상태 */}
-          {filteredMessages.length === 0 && (
-            <div className="flex flex-col items-center justify-center py-16">
-              <h3 className="text-lg font-semibold mb-2">
-                {searchTerm
-                  ? "검색 결과가 없습니다"
-                  : "예정된 메시지가 없습니다"}
-              </h3>
-              <p className="text-muted-foreground text-center mb-4">
-                {searchTerm
-                  ? "다른 검색어를 사용해보세요"
-                  : "새로운 슬랙 메시지 자동화 스케줄을 추가해보세요"}
-              </p>
-              {!searchTerm && (
-                <ScheduleModal>
-                  <Button>
-                    <Plus className="h-4 w-4 mr-2" />첫 번째 스케줄 만들기
-                  </Button>
-                </ScheduleModal>
-              )}
-            </div>
-          )}
-        </div>
+        </ProtectedRoute>
       </SidebarInset>
     </SidebarProvider>
   );
