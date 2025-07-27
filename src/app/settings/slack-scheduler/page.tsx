@@ -15,7 +15,7 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
-import { AppSidebar } from "@/components/app-sidebar";
+import { AppSidebar } from "@/components/navigation/app-sidebar";
 import {
   Card,
   CardContent,
@@ -34,10 +34,10 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Plus, Clock, Hash, Calendar } from "lucide-react";
-import { ScheduleModal } from "@/components/schedule-modal";
-import { ActionButtons } from "@/components/action-buttons";
-import { StatusStats, statusConfig } from "@/components/status-stats";
-import { SearchAndViewToggle } from "@/components/search-and-view-toggle";
+import { ScheduleModal } from "@/components/modals/schedule-modal";
+import { ActionButtons } from "@/components/common/action-buttons";
+import { StatusStats, statusConfig } from "@/components/common/status-stats";
+import { SearchAndViewToggle } from "@/components/common/search-and-view-toggle";
 
 // Mock 데이터
 const scheduledMessages = [

@@ -15,7 +15,7 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
-import { AppSidebar } from "@/components/app-sidebar";
+import { AppSidebar } from "@/components/navigation/app-sidebar";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -36,7 +36,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { TransactionTable } from "@/components/transaction-table";
+import { TransactionTable } from "@/components/transaction/transaction-table";
 import { Upload, FileJson, X } from "lucide-react";
 
 export default function AnalyticsPage() {
