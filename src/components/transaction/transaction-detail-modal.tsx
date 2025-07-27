@@ -77,9 +77,9 @@ export function TransactionDetailModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="w-full h-screen max-w-none max-h-none sm:max-w-[85vw] sm:max-h-[90vh] sm:h-auto overflow-hidden p-0">
-        <div className="flex flex-col h-screen sm:h-[calc(90vh-2rem)]">
-          <DialogHeader className="px-4 py-4 sm:px-6 border-b bg-background shrink-0 relative z-10">
+      <DialogContent className="w-full h-screen max-w-none max-h-none sm:max-w-[85vw] sm:max-h-[90vh] sm:h-auto p-0">
+        <div className="flex flex-col h-full sm:max-h-[90vh]">
+          <DialogHeader className="px-4 py-4 sm:px-6 border-b bg-background shrink-0 rounded-t-lg">
             <div className="flex items-center justify-between">
               <DialogTitle className="text-xl font-semibold">
                 거래 상세정보
@@ -91,7 +91,7 @@ export function TransactionDetailModal({
             </div>
           </DialogHeader>
 
-          <div className="flex-1 overflow-y-auto px-4 py-4 sm:px-6 sm:py-6 min-h-0 touch-pan-y">
+          <div className="flex-1 overflow-y-auto px-4 py-4 sm:px-6 sm:py-6 min-h-0">
             <div className="space-y-6">
               {/* 기본 정보 */}
               <Card>

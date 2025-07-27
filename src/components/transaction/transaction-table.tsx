@@ -671,7 +671,7 @@ export function TransactionTable({ data }: TransactionTableProps) {
           </div>
 
           {/* 정보 텍스트 */}
-          <div className="flex justify-center mt-2 mb-4">
+          <div className="flex justify-center mt-2">
             <div className="text-sm text-muted-foreground whitespace-nowrap">
               {totalItems > 0 && (
                 <span>

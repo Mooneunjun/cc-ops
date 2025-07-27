@@ -240,7 +240,7 @@ export default function AnalyticsPage() {
             </div>
           </header>
 
-          <div className="flex-1 overflow-y-auto">
+          <div className="flex-1 overflow-y-auto mb-4">
             <div className="flex flex-col gap-4 p-4 pt-0 h-full">
               {/* 헤더 */}
               {uploadedData && (
