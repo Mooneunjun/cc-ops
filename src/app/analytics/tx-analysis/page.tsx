@@ -6,6 +6,7 @@ import {
   SidebarProvider,
   SidebarTrigger,
 } from "@/components/ui/sidebar";
+import { ProtectedRoute } from "@/components/common/protected-route";
 import { Separator } from "@/components/ui/separator";
 import {
   Breadcrumb,
@@ -15,7 +16,7 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
-import { AppSidebar } from "@/components/app-sidebar";
+import { AppSidebar } from "@/components/navigation/app-sidebar";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -36,8 +37,9 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { TransactionTable } from "@/components/transaction-table";
+import { TransactionTable } from "@/components/transaction/transaction-table";
 import { Upload, FileJson, X } from "lucide-react";
+import { toast } from "sonner";
 
 export default function AnalyticsPage() {
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
@@ -87,8 +89,44 @@ export default function AnalyticsPage() {
 
       const reader = new FileReader();
       reader.onload = (e) => {
+        const result = e.target?.result;
+
+        // 기본적인 result 검사
+        if (result === null || result === undefined) {
+          toast.error("파일을 읽을 수 없습니다.", {
+            style: { color: "var(--color-red-400)" },
+          });
+          setIsUploading(false);
+          setUploadedFile(null);
+          return;
+        }
+
+        // readAsText()를 사용했으므로 string이어야 함
+        const content = String(result).trim();
+
+        if (content === "") {
+          toast.error("파일이 비어있습니다.", {
+            style: { color: "var(--color-red-400)" },
+          });
+          setIsUploading(false);
+          setUploadedFile(null);
+          return;
+        }
+
         try {
-          const jsonData = JSON.parse(e.target?.result as string);
+          // JSON 파싱 시도
+          const jsonData = JSON.parse(content);
+
+          // 기본적인 데이터 검증 (null 체크만)
+          if (jsonData === null) {
+            toast.error("JSON 데이터가 유효하지 않습니다.", {
+              style: { color: "var(--color-red-400)" },
+            });
+            setIsUploading(false);
+            setUploadedFile(null);
+            return;
+          }
+
           setUploadedData(jsonData);
           setIsUploading(false);
 
@@ -99,16 +137,37 @@ export default function AnalyticsPage() {
           );
           sessionStorage.setItem("analytics-file-name", file.name);
           sessionStorage.setItem("analytics-file-size", file.size.toString());
+
+          // Toast로 성공 피드백
+          toast.success(
+            `${
+              jsonData.rows?.length || 0
+            }건의 거래내역이 성공적으로 로드되었습니다!`
+          );
         } catch (error) {
           console.error("JSON 파싱 오류:", error);
-          alert("올바른 JSON 파일이 아닙니다.");
+          toast.error("올바른 JSON 파일이 아닙니다.", {
+            style: { color: "var(--color-red-400)" },
+          });
           setIsUploading(false);
           setUploadedFile(null);
         }
       };
+
+      reader.onerror = () => {
+        console.error("파일 읽기 오류:", reader.error);
+        toast.error("파일을 읽는 중 오류가 발생했습니다.", {
+          style: { color: "var(--color-red-400)" },
+        });
+        setIsUploading(false);
+        setUploadedFile(null);
+      };
+
       reader.readAsText(file);
     } else {
-      alert("JSON 파일만 업로드 가능합니다.");
+      toast.error("JSON 파일만 업로드 가능합니다.", {
+        style: { color: "var(--color-red-400)" },
+      });
     }
   }, []);
 
@@ -159,256 +218,215 @@ export default function AnalyticsPage() {
     <SidebarProvider>
       <AppSidebar />
       <SidebarInset className="h-[calc(100dvh-1rem)] flex flex-col">
-        <header className="flex h-16 shrink-0 items-center gap-2">
-          <div className="flex items-center gap-2 px-4">
-            <SidebarTrigger className="-ml-1" />
-            <Separator
-              orientation="vertical"
-              className="mr-2 data-[orientation=vertical]:h-4"
-            />
-            <Breadcrumb>
-              <BreadcrumbList>
-                <BreadcrumbItem className="hidden md:block">
-                  <BreadcrumbLink href="#">Analytics</BreadcrumbLink>
-                </BreadcrumbItem>
-                <BreadcrumbSeparator className="hidden md:block" />
-                <BreadcrumbItem>
-                  <BreadcrumbPage>TX Analysis</BreadcrumbPage>
-                </BreadcrumbItem>
-              </BreadcrumbList>
-            </Breadcrumb>
-          </div>
-        </header>
+        <ProtectedRoute>
+          <header className="flex h-16 shrink-0 items-center gap-2">
+            <div className="flex items-center gap-2 px-4">
+              <SidebarTrigger className="-ml-1" />
+              <Separator
+                orientation="vertical"
+                className="mr-2 data-[orientation=vertical]:h-4"
+              />
+              <Breadcrumb>
+                <BreadcrumbList>
+                  <BreadcrumbItem className="hidden md:block">
+                    <BreadcrumbLink href="#">Analytics</BreadcrumbLink>
+                  </BreadcrumbItem>
+                  <BreadcrumbSeparator className="hidden md:block" />
+                  <BreadcrumbItem>
+                    <BreadcrumbPage>TX Analysis</BreadcrumbPage>
+                  </BreadcrumbItem>
+                </BreadcrumbList>
+              </Breadcrumb>
+            </div>
+          </header>
 
-        <div className="flex-1 overflow-y-auto">
-          <div className="flex flex-col gap-4 p-4 pt-0">
-            {/* 헤더 */}
-            {uploadedData && (
-              <div className="flex items-center justify-between">
-                <div>
-                  <h1 className="text-2xl font-bold tracking-tight">
-                    AML 거래내역 분석
-                  </h1>
-                  <p className="text-muted-foreground">
-                    해외송금 거래내역의 통계를 시각화하고 지표를 검토하세요
-                  </p>
-                </div>
-                <div className="flex items-center gap-4">
-                  <div className="text-right">
-                    <p className="text-sm font-medium">{uploadedFile?.name}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {uploadedData.rows?.length || 0}건의 거래내역
-                    </p>
-                  </div>
-                  <AlertDialog>
-                    <AlertDialogTrigger asChild>
-                      <Button
-                        variant="outline"
-                        className="flex items-center gap-2"
-                      >
-                        <X className="h-4 w-4" />
-                        초기화
-                      </Button>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent>
-                      <AlertDialogHeader>
-                        <AlertDialogTitle>데이터 초기화 확인</AlertDialogTitle>
-                        <AlertDialogDescription>
-                          업로드된 거래내역 데이터가 모두 삭제됩니다.
-                          계속하시겠습니까?
-                        </AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <AlertDialogFooter>
-                        <AlertDialogCancel>취소</AlertDialogCancel>
-                        <AlertDialogAction onClick={clearUploadedFile}>
-                          초기화
-                        </AlertDialogAction>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
-                </div>
-              </div>
-            )}
-
-            {/* 분석 내용 영역 */}
-            {!isDataLoaded ? (
-              <div className="flex flex-col items-center justify-center min-h-[calc(100vh-8rem)] text-center text-muted-foreground">
-                <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-                <p className="text-sm mt-4">데이터를 불러오는 중...</p>
-              </div>
-            ) : uploadedData ? (
-              <TransactionTable data={uploadedData} />
-            ) : (
-              <div className="w-full">
-                {/* 메인 섹션 - 화면 중앙 */}
-                <div className="flex flex-col items-center justify-center min-h-[calc(100vh-8rem)] text-center space-y-12 px-4">
-                  <div className="space-y-6">
-                    <h1 className="text-4xl md:text-6xl font-bold tracking-tight">
-                      AML 거래내역 분석
+          <div className="flex-1 overflow-y-auto mb-4">
+            <div className="flex flex-col gap-4 p-4 pt-0 h-full">
+              {/* 헤더 */}
+              {uploadedData && (
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h1 className="text-2xl font-bold tracking-tight">
+                      Transaction Analysis
                     </h1>
-                    <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto leading-relaxed">
-                      해외송금 거래내역을 업로드하여{" "}
-                      <span className="text-foreground font-medium">
-                        통계를 시각화
-                      </span>
-                      하고 <br />
-                      AML 지표를 검토하세요
+                    <p className="text-muted-foreground">
+                      Analyze transaction data and visualize statistics.
                     </p>
                   </div>
-
-                  <div className="flex flex-col sm:flex-row gap-4">
-                    <Dialog>
-                      <DialogTrigger asChild>
-                        <Button size="lg" className="gap-2 text-base px-8 py-6">
-                          <Upload className="h-5 w-5" />
-                          Get Started
+                  <div className="flex items-center gap-4">
+                    <div className="text-right">
+                      <p className="text-sm font-medium">
+                        {uploadedFile?.name}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {uploadedData.rows?.length || 0}건의 거래내역
+                      </p>
+                    </div>
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button
+                          variant="outline"
+                          className="flex items-center gap-2"
+                        >
+                          <X className="h-4 w-4" />
+                          Reset
                         </Button>
-                      </DialogTrigger>
-                      <DialogContent className="sm:max-w-md">
-                        <DialogHeader>
-                          <DialogTitle>거래내역 업로드</DialogTitle>
-                          <DialogDescription>
-                            JSON 형식의 거래내역 파일을 업로드하세요.
-                          </DialogDescription>
-                        </DialogHeader>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>
+                            Confirm Data Reset
+                          </AlertDialogTitle>
+                          <AlertDialogDescription>
+                            All uploaded transaction data will be deleted.
+                            Continue?
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                          <AlertDialogAction onClick={clearUploadedFile}>
+                            Reset
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  </div>
+                </div>
+              )}
 
-                        <div className="space-y-4">
-                          {uploadedFile ? (
-                            // 업로드된 파일 표시
-                            <div className="flex items-center justify-between p-3 bg-green-50 border border-green-200 rounded-lg">
-                              <div className="flex items-center gap-2">
-                                <FileJson className="h-5 w-5 text-green-600" />
-                                <div>
-                                  <p className="text-sm font-medium text-green-900">
-                                    {uploadedFile.name}
-                                  </p>
-                                  <p className="text-xs text-green-600">
-                                    {(uploadedFile.size / 1024).toFixed(1)} KB
-                                  </p>
-                                </div>
-                              </div>
-                              <AlertDialog>
-                                <AlertDialogTrigger asChild>
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    className="text-green-600 hover:text-green-700"
-                                  >
-                                    <X className="h-4 w-4" />
-                                  </Button>
-                                </AlertDialogTrigger>
-                                <AlertDialogContent>
-                                  <AlertDialogHeader>
-                                    <AlertDialogTitle>
-                                      데이터 초기화 확인
-                                    </AlertDialogTitle>
-                                    <AlertDialogDescription>
-                                      업로드된 거래내역 데이터가 모두
-                                      삭제됩니다. 계속하시겠습니까?
-                                    </AlertDialogDescription>
-                                  </AlertDialogHeader>
-                                  <AlertDialogFooter>
-                                    <AlertDialogCancel>취소</AlertDialogCancel>
-                                    <AlertDialogAction
-                                      onClick={clearUploadedFile}
-                                    >
-                                      초기화
-                                    </AlertDialogAction>
-                                  </AlertDialogFooter>
-                                </AlertDialogContent>
-                              </AlertDialog>
-                            </div>
-                          ) : (
-                            // 파일 업로드 영역
+              {/* 분석 내용 영역 */}
+              {!isDataLoaded ? (
+                <div className="flex flex-col items-center justify-center h-full text-center text-muted-foreground">
+                  <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                  <p className="text-sm mt-4">데이터를 불러오는 중...</p>
+                </div>
+              ) : uploadedData ? (
+                <TransactionTable data={uploadedData} />
+              ) : (
+                <div className="w-full h-full">
+                  {/* 메인 섹션 - 화면 중앙 */}
+                  <div className="flex flex-col items-center justify-center h-full text-center space-y-12 px-4">
+                    <div className="space-y-6">
+                      <h1 className="text-4xl md:text-6xl font-bold tracking-tight">
+                        Transaction Analysis
+                      </h1>
+                      <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto leading-relaxed">
+                        Upload transaction data and visualize statistics.
+                      </p>
+                    </div>
+
+                    <div className="flex flex-col sm:flex-row gap-4">
+                      <Dialog>
+                        <DialogTrigger asChild>
+                          <Button
+                            size="lg"
+                            className="gap-2 text-base px-8 py-6"
+                          >
+                            <Upload className="h-5 w-5" />
+                            Get Started
+                          </Button>
+                        </DialogTrigger>
+                        <DialogContent className="sm:max-w-md">
+                          <DialogHeader>
+                            <DialogTitle>Upload Transaction Data</DialogTitle>
+                            <DialogDescription>
+                              Upload a JSON file of transaction data.
+                            </DialogDescription>
+                          </DialogHeader>
+
+                          <div className="space-y-4">
+                            {/* 파일 업로드 영역 */}
                             <div
-                              onDrop={handleDrop}
-                              onDragOver={handleDragOver}
-                              onDragLeave={handleDragLeave}
+                              onDrop={!isUploading ? handleDrop : undefined}
+                              onDragOver={
+                                !isUploading ? handleDragOver : undefined
+                              }
+                              onDragLeave={
+                                !isUploading ? handleDragLeave : undefined
+                              }
                               className={`
-                            border-2 border-dashed rounded-lg p-8 text-center transition-colors
+                            border-2 border-dashed rounded-lg p-8 text-center transition-colors h-[240px] flex flex-col items-center justify-center
                             ${
-                              isDragOver
+                              isUploading
+                                ? "border-primary bg-primary/5"
+                                : isDragOver
                                 ? "border-primary bg-primary/5"
                                 : "border-gray-300 hover:border-gray-400"
                             }
                           `}
                             >
-                              <FileJson className="h-12 w-12 mx-auto mb-4 text-gray-400" />
-                              <div className="space-y-2">
-                                <p className="text-sm font-medium">
-                                  JSON 파일을 드래그하여 업로드하세요
-                                </p>
-                                <p className="text-xs text-muted-foreground">
-                                  또는 아래 버튼을 클릭하여 파일을 선택하세요
-                                </p>
-                              </div>
-
-                              <div className="mt-4">
-                                <input
-                                  type="file"
-                                  accept=".json"
-                                  onChange={handleFileInput}
-                                  className="hidden"
-                                  id="file-upload-main"
-                                />
-                                <label htmlFor="file-upload-main">
-                                  <Button
-                                    variant="outline"
-                                    className="cursor-pointer"
-                                    asChild
-                                  >
-                                    <span>파일 선택</span>
-                                  </Button>
-                                </label>
-                              </div>
+                              {isUploading ? (
+                                // 로딩 상태
+                                <div className="flex flex-col items-center justify-center h-full space-y-4">
+                                  <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+                                  <div className="space-y-1 text-center">
+                                    <p className="text-sm font-medium">
+                                      Processing file...
+                                    </p>
+                                    <p className="text-xs text-muted-foreground">
+                                      Please wait while we process your JSON
+                                      file.
+                                    </p>
+                                  </div>
+                                </div>
+                              ) : (
+                                // 업로드 상태
+                                <div className="flex flex-col items-center justify-center h-full space-y-4">
+                                  <FileJson className="h-12 w-12 text-gray-400" />
+                                  <div className="space-y-1 text-center">
+                                    <p className="text-sm font-medium">
+                                      Drag and drop a JSON file to upload.
+                                    </p>
+                                    <p className="text-xs text-muted-foreground">
+                                      Or click the button below to select a
+                                      file.
+                                    </p>
+                                  </div>
+                                  <div>
+                                    <input
+                                      type="file"
+                                      accept=".json"
+                                      onChange={handleFileInput}
+                                      className="hidden"
+                                      id="file-upload-main"
+                                    />
+                                    <label htmlFor="file-upload-main">
+                                      <Button
+                                        variant="outline"
+                                        className="cursor-pointer"
+                                        asChild
+                                      >
+                                        <span>Select File</span>
+                                      </Button>
+                                    </label>
+                                  </div>
+                                </div>
+                              )}
                             </div>
-                          )}
+                          </div>
+                        </DialogContent>
+                      </Dialog>
 
-                          {isUploading && (
-                            <div className="text-center py-4">
-                              <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-                              <p className="text-sm text-muted-foreground mt-2">
-                                파일을 처리하고 있습니다...
-                              </p>
-                            </div>
-                          )}
+                      <Button
+                        variant="outline"
+                        size="lg"
+                        className="text-base px-8 py-6"
+                      >
+                        Learn More
+                      </Button>
+                    </div>
 
-                          {uploadedData && (
-                            <div className="space-y-2">
-                              <p className="text-sm font-medium">
-                                업로드 완료!
-                              </p>
-                              <div className="text-xs text-muted-foreground">
-                                <p>
-                                  • {uploadedData.rows?.length || 0}건의
-                                  거래내역이 로드되었습니다
-                                </p>
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                      </DialogContent>
-                    </Dialog>
-
-                    <Button
-                      variant="outline"
-                      size="lg"
-                      className="text-base px-8 py-6"
-                    >
-                      Learn More
-                    </Button>
-                  </div>
-
-                  <div className="text-sm text-muted-foreground">
-                    <code className="bg-muted px-2 py-1 rounded text-xs">
-                      JSON 형식의 거래내역 파일을 지원합니다
-                    </code>
+                    <div className="text-sm text-muted-foreground">
+                      <code className="bg-muted px-2 py-1 rounded text-xs">
+                        JSON format transaction data is supported.
+                      </code>
+                    </div>
                   </div>
                 </div>
-              </div>
-            )}
+              )}
+            </div>
           </div>
-        </div>
+        </ProtectedRoute>
       </SidebarInset>
     </SidebarProvider>
   );

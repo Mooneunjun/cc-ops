@@ -5,6 +5,22 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Pagination,
+  PaginationContent,
+  PaginationEllipsis,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination";
+import {
   DropdownMenu,
   DropdownMenuTrigger,
   DropdownMenuContent,
@@ -55,6 +71,10 @@ export function TransactionTable({ data }: TransactionTableProps) {
   const [minAmount, setMinAmount] = useState("");
   const [maxAmount, setMaxAmount] = useState("");
   const [dateRange, setDateRange] = useState<DateRange | undefined>();
+
+  // Pagination 상태
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState<number | "all">(20);
 
   const handleViewDetails = (transaction: any) => {
     setSelectedTransaction(transaction);
@@ -123,6 +143,7 @@ export function TransactionTable({ data }: TransactionTableProps) {
     } else {
       setSelectedStatuses((prev) => prev.filter((s) => s !== status));
     }
+    setCurrentPage(1); // 필터 변경 시 첫 페이지로
   };
 
   // 수취인 체크박스 핸들러
@@ -132,6 +153,7 @@ export function TransactionTable({ data }: TransactionTableProps) {
     } else {
       setSelectedRecipients((prev) => prev.filter((r) => r !== recipient));
     }
+    setCurrentPage(1); // 필터 변경 시 첫 페이지로
   };
 
   // 필터 초기화
@@ -142,6 +164,7 @@ export function TransactionTable({ data }: TransactionTableProps) {
     setMinAmount("");
     setMaxAmount("");
     setDateRange(undefined);
+    setCurrentPage(1); // 페이지도 초기화
   };
 
   // 필터링된 데이터
@@ -204,6 +227,27 @@ export function TransactionTable({ data }: TransactionTableProps) {
     dateRange,
   ]);
 
+  // Pagination 로직
+  const totalItems = filteredData.length;
+  const totalPages =
+    itemsPerPage === "all" ? 1 : Math.ceil(totalItems / itemsPerPage);
+
+  const paginatedData = useMemo(() => {
+    if (itemsPerPage === "all") {
+      return filteredData;
+    }
+
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    return filteredData.slice(startIndex, endIndex);
+  }, [filteredData, currentPage, itemsPerPage]);
+
+  // 페이지당 항목 수 변경
+  const handleItemsPerPageChange = (value: string) => {
+    setItemsPerPage(value === "all" ? "all" : parseInt(value));
+    setCurrentPage(1);
+  };
+
   return (
     <>
       {/* 필터 섹션 */}
@@ -224,7 +268,10 @@ export function TransactionTable({ data }: TransactionTableProps) {
                 id="search"
                 placeholder="송금번호, 수취인명, 송금국가, 지급국가 검색..."
                 value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
+                onChange={(e) => {
+                  setSearchTerm(e.target.value);
+                  setCurrentPage(1); // 검색 시 첫 페이지로
+                }}
                 className="pl-10"
               />
             </div>
@@ -251,7 +298,6 @@ export function TransactionTable({ data }: TransactionTableProps) {
                   }}
                 >
                   <DropdownMenuLabel>송금상태</DropdownMenuLabel>
-                  <DropdownMenuSeparator />
                   {uniqueStatuses.map((status) => (
                     <DropdownMenuCheckboxItem
                       key={status as string}
@@ -259,6 +305,7 @@ export function TransactionTable({ data }: TransactionTableProps) {
                       onCheckedChange={(checked) =>
                         handleStatusChange(status as string, checked)
                       }
+                      className="relative flex w-full cursor-default items-center rounded-sm py-1.5 pl-2 pr-8 text-sm outline-none select-none data-[disabled]:pointer-events-none data-[disabled]:opacity-50 focus:bg-accent focus:text-accent-foreground [&>span]:!left-auto [&>span]:!right-2"
                     >
                       <span
                         className={`inline-flex px-2 py-1 text-xs rounded-full ${getStatusBadgeClass(
@@ -293,7 +340,6 @@ export function TransactionTable({ data }: TransactionTableProps) {
                   }}
                 >
                   <DropdownMenuLabel>수취인</DropdownMenuLabel>
-                  <DropdownMenuSeparator />
                   {uniqueRecipients.map((recipient) => (
                     <DropdownMenuCheckboxItem
                       key={recipient as string}
@@ -301,6 +347,7 @@ export function TransactionTable({ data }: TransactionTableProps) {
                       onCheckedChange={(checked) =>
                         handleRecipientChange(recipient as string, checked)
                       }
+                      className="relative flex w-full cursor-default items-center rounded-sm py-1.5 pl-2 pr-8 text-sm outline-none select-none data-[disabled]:pointer-events-none data-[disabled]:opacity-50 focus:bg-accent focus:text-accent-foreground [&>span]:!left-auto [&>span]:!right-2"
                     >
                       {recipient as string}
                     </DropdownMenuCheckboxItem>
@@ -317,14 +364,20 @@ export function TransactionTable({ data }: TransactionTableProps) {
                   type="number"
                   placeholder="최소"
                   value={minAmount}
-                  onChange={(e) => setMinAmount(e.target.value)}
+                  onChange={(e) => {
+                    setMinAmount(e.target.value);
+                    setCurrentPage(1);
+                  }}
                 />
                 <span className="flex items-center">~</span>
                 <Input
                   type="number"
                   placeholder="최대"
                   value={maxAmount}
-                  onChange={(e) => setMaxAmount(e.target.value)}
+                  onChange={(e) => {
+                    setMaxAmount(e.target.value);
+                    setCurrentPage(1);
+                  }}
                 />
               </div>
             </div>
@@ -360,7 +413,10 @@ export function TransactionTable({ data }: TransactionTableProps) {
                     mode="range"
                     defaultMonth={dateRange?.from}
                     selected={dateRange}
-                    onSelect={setDateRange}
+                    onSelect={(range) => {
+                      setDateRange(range);
+                      setCurrentPage(1);
+                    }}
                     captionLayout="dropdown"
                     fromYear={2020}
                     toYear={2030}
@@ -372,8 +428,29 @@ export function TransactionTable({ data }: TransactionTableProps) {
 
           {/* 필터 액션 버튼 */}
           <div className="flex justify-between items-center pt-4">
-            <div className="text-sm text-muted-foreground">
-              총 {data.rows?.length || 0}건 중 {filteredData.length}건 표시
+            <div className="flex items-center gap-4">
+              <div className="text-sm text-muted-foreground">
+                총 {data.rows?.length || 0}건 중 {filteredData.length}건 표시
+              </div>
+              <div className="flex items-center gap-2">
+                <Label htmlFor="items-per-page" className="text-sm">
+                  페이지당:
+                </Label>
+                <Select
+                  value={itemsPerPage.toString()}
+                  onValueChange={handleItemsPerPageChange}
+                >
+                  <SelectTrigger id="items-per-page" className="w-24">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="20">20개</SelectItem>
+                    <SelectItem value="50">50개</SelectItem>
+                    <SelectItem value="100">100개</SelectItem>
+                    <SelectItem value="all">전체</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
             <Button
               variant="outline"
@@ -404,7 +481,7 @@ export function TransactionTable({ data }: TransactionTableProps) {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filteredData.length === 0 ? (
+            {paginatedData.length === 0 ? (
               <TableRow>
                 <TableCell
                   colSpan={9}
@@ -414,7 +491,7 @@ export function TransactionTable({ data }: TransactionTableProps) {
                 </TableCell>
               </TableRow>
             ) : (
-              filteredData.map((transaction: any) => (
+              paginatedData.map((transaction: any) => (
                 <TableRow key={transaction.id}>
                   <TableCell className="font-medium font-mono text-center">
                     {transaction.no}
@@ -460,6 +537,153 @@ export function TransactionTable({ data }: TransactionTableProps) {
           </TableBody>
         </Table>
       </div>
+
+      {/* Pagination */}
+      {itemsPerPage !== "all" && totalPages > 1 && (
+        <div className="mt-2">
+          {/* Pagination - 중앙 배치 */}
+          <div className="flex justify-center">
+            <Pagination>
+              <PaginationContent>
+                <PaginationItem>
+                  <PaginationPrevious
+                    href="#"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      if (currentPage > 1) {
+                        setCurrentPage(currentPage - 1);
+                      }
+                    }}
+                    className={
+                      currentPage <= 1 ? "pointer-events-none opacity-50" : ""
+                    }
+                  />
+                </PaginationItem>
+
+                {/* 페이지 번호들 */}
+                {(() => {
+                  const pages = [];
+                  const maxVisiblePages = 5;
+                  let startPage = Math.max(
+                    1,
+                    currentPage - Math.floor(maxVisiblePages / 2)
+                  );
+                  let endPage = Math.min(
+                    totalPages,
+                    startPage + maxVisiblePages - 1
+                  );
+
+                  if (endPage - startPage + 1 < maxVisiblePages) {
+                    startPage = Math.max(1, endPage - maxVisiblePages + 1);
+                  }
+
+                  // 첫 페이지
+                  if (startPage > 1) {
+                    pages.push(
+                      <PaginationItem key={1}>
+                        <PaginationLink
+                          href="#"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            setCurrentPage(1);
+                          }}
+                          isActive={currentPage === 1}
+                        >
+                          1
+                        </PaginationLink>
+                      </PaginationItem>
+                    );
+
+                    if (startPage > 2) {
+                      pages.push(
+                        <PaginationItem key="ellipsis1">
+                          <PaginationEllipsis />
+                        </PaginationItem>
+                      );
+                    }
+                  }
+
+                  // 보이는 페이지들
+                  for (let i = startPage; i <= endPage; i++) {
+                    pages.push(
+                      <PaginationItem key={i}>
+                        <PaginationLink
+                          href="#"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            setCurrentPage(i);
+                          }}
+                          isActive={currentPage === i}
+                        >
+                          {i}
+                        </PaginationLink>
+                      </PaginationItem>
+                    );
+                  }
+
+                  // 마지막 페이지
+                  if (endPage < totalPages) {
+                    if (endPage < totalPages - 1) {
+                      pages.push(
+                        <PaginationItem key="ellipsis2">
+                          <PaginationEllipsis />
+                        </PaginationItem>
+                      );
+                    }
+
+                    pages.push(
+                      <PaginationItem key={totalPages}>
+                        <PaginationLink
+                          href="#"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            setCurrentPage(totalPages);
+                          }}
+                          isActive={currentPage === totalPages}
+                        >
+                          {totalPages}
+                        </PaginationLink>
+                      </PaginationItem>
+                    );
+                  }
+
+                  return pages;
+                })()}
+
+                <PaginationItem>
+                  <PaginationNext
+                    href="#"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      if (currentPage < totalPages) {
+                        setCurrentPage(currentPage + 1);
+                      }
+                    }}
+                    className={
+                      currentPage >= totalPages
+                        ? "pointer-events-none opacity-50"
+                        : ""
+                    }
+                  />
+                </PaginationItem>
+              </PaginationContent>
+            </Pagination>
+          </div>
+
+          {/* 정보 텍스트 */}
+          <div className="flex justify-center mt-2">
+            <div className="text-sm text-muted-foreground whitespace-nowrap">
+              {totalItems > 0 && (
+                <span>
+                  {(currentPage - 1) * (itemsPerPage as number) + 1} -{" "}
+                  {Math.min(currentPage * (itemsPerPage as number), totalItems)}{" "}
+                  of {totalItems} 건
+                </span>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       <TransactionDetailModal
         transaction={selectedTransaction}

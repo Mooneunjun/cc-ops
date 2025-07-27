@@ -77,9 +77,9 @@ export function TransactionDetailModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="w-full h-screen max-w-none max-h-none sm:max-w-[85vw] sm:max-h-[90vh] sm:h-auto overflow-hidden p-0">
-        <div className="flex flex-col h-screen sm:h-[calc(90vh-2rem)]">
-          <DialogHeader className="px-4 py-4 sm:px-6 border-b bg-background shrink-0 relative z-10">
+      <DialogContent className="w-full h-screen max-w-none max-h-none sm:max-w-[85vw] sm:max-h-[90vh] sm:h-auto p-0">
+        <div className="flex flex-col h-full sm:max-h-[90vh]">
+          <DialogHeader className="px-4 py-4 sm:px-6 border-b bg-background shrink-0 rounded-t-lg">
             <div className="flex items-center justify-between">
               <DialogTitle className="text-xl font-semibold">
                 거래 상세정보
@@ -91,7 +91,7 @@ export function TransactionDetailModal({
             </div>
           </DialogHeader>
 
-          <div className="flex-1 overflow-y-auto px-4 py-4 sm:px-6 sm:py-6 min-h-0 touch-pan-y">
+          <div className="flex-1 overflow-y-auto px-4 py-4 sm:px-6 sm:py-6 min-h-0">
             <div className="space-y-6">
               {/* 기본 정보 */}
               <Card>
@@ -138,6 +138,16 @@ export function TransactionDetailModal({
                         <Badge variant="destructive" className="text-xs">
                           {transaction.txRejectDetailStatus}
                         </Badge>
+                      </div>
+                    )}
+                    {transaction.transferChangeRes !== undefined && (
+                      <div>
+                        <div className="text-muted-foreground mb-1">
+                          지급상태여부
+                        </div>
+                        <div className="font-medium">
+                          {transaction.transferChangeResDescr}
+                        </div>
                       </div>
                     )}
                   </div>
@@ -201,12 +211,7 @@ export function TransactionDetailModal({
                           {transaction.paymentOption}
                         </div>
                       </div>
-                      <div>
-                        <div className="text-muted-foreground mb-1">수수료</div>
-                        <div className="font-medium">
-                          {formatAmount(transaction.fee)} {transaction.source}
-                        </div>
-                      </div>
+
                       <div>
                         <div className="text-muted-foreground mb-1">
                           총 입금액
@@ -315,13 +320,13 @@ export function TransactionDetailModal({
                 </Card>
               </div>
 
-              {/* 환율 정보 */}
+              {/* 환율 & 수수료 정보 */}
               <Card>
                 <CardHeader>
-                  <CardTitle className="text-lg">환율 정보</CardTitle>
+                  <CardTitle className="text-lg">환율 & 수수료 정보</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 text-sm">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 text-sm">
                     <div>
                       <div className="text-muted-foreground mb-1">제공환율</div>
                       <div className="font-medium">{transaction.rate}</div>
@@ -332,13 +337,20 @@ export function TransactionDetailModal({
                       </div>
                       <div>{formatDateTime(transaction.detailRateTime)}</div>
                     </div>
-                    {transaction.transferChangeRes !== undefined && (
+                    <div>
+                      <div className="text-muted-foreground mb-1">수수료</div>
+                      <div className="font-medium">
+                        {formatAmount(transaction.fee)} {transaction.source}
+                      </div>
+                    </div>
+                    {transaction.coupon !== undefined && (
                       <div>
                         <div className="text-muted-foreground mb-1">
-                          환율변경응답
+                          쿠폰 할인
                         </div>
                         <div className="font-medium">
-                          {transaction.transferChangeResDescr}
+                          {formatAmount(transaction.coupon)}{" "}
+                          {transaction.source}
                         </div>
                       </div>
                     )}
