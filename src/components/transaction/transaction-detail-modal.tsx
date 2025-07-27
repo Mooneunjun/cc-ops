@@ -77,7 +77,7 @@ export function TransactionDetailModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="w-full h-screen max-w-none max-h-none sm:max-w-[85vw] sm:max-h-[90vh] sm:h-auto p-0">
+      <DialogContent className="w-full h-screen max-w-none max-h-none sm:max-w-[85vw] sm:max-h-[100vh] sm:h-auto p-0">
         <div className="flex flex-col h-full sm:max-h-[90vh]">
           <DialogHeader className="px-4 py-4 sm:px-6 border-b bg-background shrink-0 rounded-t-lg">
             <div className="flex items-center justify-between">

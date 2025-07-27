@@ -251,7 +251,7 @@ export function TransactionTable({ data }: TransactionTableProps) {
   return (
     <>
       {/* 필터 섹션 */}
-      <Card className="mb-6">
+      <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-lg">
             <Filter className="h-5 w-5" />
@@ -465,7 +465,7 @@ export function TransactionTable({ data }: TransactionTableProps) {
       </Card>
 
       {/* 테이블 */}
-      <div className="rounded-md border">
+      <div className="rounded-lg border">
         <Table>
           <TableHeader>
             <TableRow>
