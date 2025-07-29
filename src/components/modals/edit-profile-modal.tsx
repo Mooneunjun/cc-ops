@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useAuth } from "@/hooks/use-auth";
+import { useAuthQuery } from "@/hooks/use-auth-query";
 import {
   Dialog,
   DialogContent,
@@ -23,7 +23,7 @@ interface EditProfileModalProps {
 }
 
 export function EditProfileModal({ isOpen, onClose }: EditProfileModalProps) {
-  const { user, updateProfile, updatePassword } = useAuth();
+  const { user, updateProfile, updatePassword } = useAuthQuery();
 
   // Profile form state
   const [fullName, setFullName] = useState(
@@ -65,23 +65,18 @@ export function EditProfileModal({ isOpen, onClose }: EditProfileModalProps) {
     }
 
     try {
-      const { error } = await updateProfile({
+      await updateProfile({
         full_name: fullName.trim(),
       });
 
-      if (error) {
-        toast.error(error.message || "Profile update failed", {
-          style: { color: "var(--color-red-400)" },
-        });
-      } else {
-        toast.success("Your profile has been updated successfully.");
-        // 성공 시 잠시 후 다이얼로그 닫기
-        setTimeout(() => {
-          onClose();
-        }, 1500);
-      }
-    } catch (err) {
-      toast.error("An error occurred while updating profile", {
+      toast.success("Your profile has been updated successfully.");
+      // 성공 시 잠시 후 다이얼로그 닫기
+      setTimeout(() => {
+        onClose();
+      }, 1500);
+    } catch (error: any) {
+      console.error("Profile update error:", error);
+      toast.error(error.message || "Profile update failed", {
         style: { color: "var(--color-red-400)" },
       });
     } finally {
@@ -111,24 +106,19 @@ export function EditProfileModal({ isOpen, onClose }: EditProfileModalProps) {
     }
 
     try {
-      const { error } = await updatePassword(newPassword);
+      await updatePassword(newPassword);
 
-      if (error) {
-        toast.error(error.message || "Password update failed", {
-          style: { color: "var(--color-red-400)" },
-        });
-      } else {
-        toast.success("Your password has been updated successfully.");
-        setCurrentPassword("");
-        setNewPassword("");
-        setConfirmPassword("");
-        // 성공 시 잠시 후 다이얼로그 닫기
-        setTimeout(() => {
-          onClose();
-        }, 1500);
-      }
-    } catch (err) {
-      toast.error("An error occurred while updating password", {
+      toast.success("Your password has been updated successfully.");
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
+      // 성공 시 잠시 후 다이얼로그 닫기
+      setTimeout(() => {
+        onClose();
+      }, 1500);
+    } catch (error: any) {
+      console.error("Password update error:", error);
+      toast.error(error.message || "Password update failed", {
         style: { color: "var(--color-red-400)" },
       });
     } finally {

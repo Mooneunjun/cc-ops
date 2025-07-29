@@ -2,7 +2,7 @@
 
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { useAuth } from "@/hooks/use-auth";
+import { useAuthQuery } from "@/hooks/use-auth-query";
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -13,7 +13,7 @@ export function ProtectedRoute({
   children,
   showFullScreenLoader = false,
 }: ProtectedRouteProps) {
-  const { user, loading } = useAuth();
+  const { user, loading } = useAuthQuery();
   const router = useRouter();
 
   useEffect(() => {

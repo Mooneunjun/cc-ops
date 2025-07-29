@@ -2,10 +2,10 @@
 
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { useAuth } from "@/hooks/use-auth";
+import { useAuthQuery } from "@/hooks/use-auth-query";
 
 export default function Home() {
-  const { user, loading } = useAuth();
+  const { user, loading } = useAuthQuery();
   const router = useRouter();
 
   useEffect(() => {

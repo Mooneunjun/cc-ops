@@ -3,8 +3,8 @@
 import { useState } from "react";
 import {
   SidebarInset,
-  SidebarProvider,
   SidebarTrigger,
+  useSidebar,
 } from "@/components/ui/sidebar";
 import { ProtectedRoute } from "@/components/common/protected-route";
 import { Separator } from "@/components/ui/separator";
@@ -16,7 +16,6 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
-import { AppSidebar } from "@/components/navigation/app-sidebar";
 import {
   Card,
   CardContent,
@@ -91,6 +90,99 @@ const scheduledMessages = [
     frequency: "오류 발생시",
   },
 ];
+
+// 동적 테이블 너비를 위한 컴포넌트
+function DynamicTableView({
+  searchTerm,
+  viewMode,
+  filteredMessages,
+  getStatusBadge,
+  formatDateTime,
+  handleAction,
+}: any) {
+  const { state } = useSidebar();
+
+  // 사이드바 상태에 따른 너비 계산
+  const getSidebarAwareMaxWidth = () => {
+    const sidebarWidth = state === "expanded" ? "16rem" : "0rem"; // 256px : 48px
+    return `calc(100vw - ${sidebarWidth} - 2rem)`;
+  };
+
+  const renderTableView = () => (
+    <div className="w-full rounded-md border overflow-hidden">
+      <div
+        className="overflow-x-auto"
+        style={{
+          maxWidth: getSidebarAwareMaxWidth(),
+        }}
+      >
+        <Table style={{ minWidth: "600px" }}>
+          <TableHeader>
+            <TableRow>
+              <TableHead className="px-3">제목</TableHead>
+              <TableHead className="px-3">상태</TableHead>
+              <TableHead className="px-3">채널</TableHead>
+              <TableHead className="px-3">예정 시간</TableHead>
+              <TableHead className="px-3">빈도</TableHead>
+              <TableHead className="px-3 text-right">액션</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {filteredMessages.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={6} className="h-24 text-center px-3">
+                  {searchTerm
+                    ? "검색 결과가 없습니다."
+                    : "예정된 메시지가 없습니다."}
+                </TableCell>
+              </TableRow>
+            ) : (
+              filteredMessages.map((message: any) => (
+                <TableRow key={message.id}>
+                  <TableCell className="px-3">
+                    <div className="space-y-1">
+                      <p className="font-medium text-sm leading-none">
+                        {message.title}
+                      </p>
+                      <p className="text-xs text-muted-foreground line-clamp-2">
+                        {message.message}
+                      </p>
+                    </div>
+                  </TableCell>
+                  <TableCell className="px-3">
+                    {getStatusBadge(
+                      message.status as keyof typeof statusConfig
+                    )}
+                  </TableCell>
+                  <TableCell className="px-3">
+                    <span className="text-xs font-mono text-muted-foreground">
+                      {message.channel}
+                    </span>
+                  </TableCell>
+                  <TableCell className="px-3">
+                    <div className="text-xs">
+                      {formatDateTime(message.scheduledTime)}
+                    </div>
+                  </TableCell>
+                  <TableCell className="px-3">
+                    <span className="text-xs text-muted-foreground">
+                      {message.frequency}
+                    </span>
+                  </TableCell>
+                  <TableCell className="px-3">
+                    <ActionButtons message={message} onAction={handleAction} />
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
+          </TableBody>
+        </Table>
+      </div>
+    </div>
+  );
+
+  return viewMode === "table" ? renderTableView() : null;
+}
 
 export default function Page() {
   const [searchTerm, setSearchTerm] = useState("");
@@ -178,74 +270,8 @@ export default function Page() {
     </div>
   );
 
-  const renderTableView = () => (
-    <div className="rounded-md border">
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead className="w-[25%] px-4">제목</TableHead>
-            <TableHead className="w-[10%] px-4">상태</TableHead>
-            <TableHead className="w-[12%] px-4">채널</TableHead>
-            <TableHead className="w-[20%] px-4">예정 시간</TableHead>
-            <TableHead className="w-[15%] px-4">빈도</TableHead>
-            <TableHead className="w-[18%] px-4 text-right">액션</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {filteredMessages.length === 0 ? (
-            <TableRow>
-              <TableCell colSpan={6} className="h-24 text-center px-4">
-                {searchTerm
-                  ? "검색 결과가 없습니다."
-                  : "예정된 메시지가 없습니다."}
-              </TableCell>
-            </TableRow>
-          ) : (
-            filteredMessages.map((message) => (
-              <TableRow key={message.id}>
-                <TableCell className="px-4">
-                  <div className="space-y-1">
-                    <p className="font-medium text-sm leading-none">
-                      {message.title}
-                    </p>
-                    <p className="text-xs text-muted-foreground line-clamp-2">
-                      {message.message}
-                    </p>
-                  </div>
-                </TableCell>
-                <TableCell className="px-4">
-                  {getStatusBadge(message.status as keyof typeof statusConfig)}
-                </TableCell>
-                <TableCell className="px-4">
-                  <code className="text-xs bg-muted px-1.5 py-0.5 rounded font-mono">
-                    {message.channel}
-                  </code>
-                </TableCell>
-                <TableCell className="px-4">
-                  <div className="text-sm">
-                    {formatDateTime(message.scheduledTime)}
-                  </div>
-                </TableCell>
-                <TableCell className="px-4">
-                  <span className="text-xs text-muted-foreground">
-                    {message.frequency}
-                  </span>
-                </TableCell>
-                <TableCell className="px-4">
-                  <ActionButtons message={message} onAction={handleAction} />
-                </TableCell>
-              </TableRow>
-            ))
-          )}
-        </TableBody>
-      </Table>
-    </div>
-  );
-
   return (
-    <SidebarProvider>
-      <AppSidebar />
-      <SidebarInset>
+    <SidebarInset>
         <ProtectedRoute>
           <header className="flex h-16 shrink-0 items-center gap-2">
             <div className="flex items-center gap-2 px-4">
@@ -268,7 +294,7 @@ export default function Page() {
             </div>
           </header>
 
-          <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
+          <div className="flex flex-1 flex-col gap-4 p-4 pt-0 max-w-full overflow-hidden">
             {/* 헤더 */}
             <div className="flex items-center justify-between">
               <div>
@@ -300,7 +326,14 @@ export default function Page() {
 
             {/* 메시지 리스트 */}
             {viewMode === "card" && renderCardView()}
-            {viewMode === "table" && renderTableView()}
+            <DynamicTableView
+              searchTerm={searchTerm}
+              viewMode={viewMode}
+              filteredMessages={filteredMessages}
+              getStatusBadge={getStatusBadge}
+              formatDateTime={formatDateTime}
+              handleAction={handleAction}
+            />
             {viewMode === "log" && (
               <div className="text-center py-16 text-muted-foreground">
                 로그 뷰는 곧 구현될 예정입니다.
@@ -331,7 +364,6 @@ export default function Page() {
             )}
           </div>
         </ProtectedRoute>
-      </SidebarInset>
-    </SidebarProvider>
+    </SidebarInset>
   );
 }

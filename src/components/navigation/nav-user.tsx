@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, memo } from "react";
 import {
   BadgeCheck,
   Bell,
@@ -26,21 +26,24 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "@/components/ui/sidebar";
-import { useAuth } from "@/hooks/use-auth";
+import { useAuthQuery } from "@/hooks/use-auth-query";
 import { useRouter } from "next/navigation";
 import { EditProfileModal } from "@/components/modals/edit-profile-modal";
 
-export function NavUser() {
+export const NavUser = memo(function NavUser() {
   const { isMobile } = useSidebar();
-  const { user, loading, signOut } = useAuth();
+  const { user, loading, signOut } = useAuthQuery();
   const router = useRouter();
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
+
+  console.log('🔥 NavUser render (Memoized) - loading:', loading, 'user:', user ? user.email : 'null');
 
   // 로딩이 끝났는데 user가 없으면 null 반환
   if (!loading && !user) return null;
 
-  // 로딩 중일 때는 스켈레톤 표시
-  if (loading) {
+  // 로딩 중이고 user가 없을 때만 스켈레톤 표시
+  if (loading && !user) {
+    console.log('🟢 NavUser - Showing skeleton (TanStack Query)');
     return (
       <>
         <SidebarMenu>
@@ -168,4 +171,4 @@ export function NavUser() {
       />
     </>
   );
-}
+});

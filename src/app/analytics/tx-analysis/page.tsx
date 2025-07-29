@@ -3,7 +3,6 @@
 import { useState, useCallback, useEffect } from "react";
 import {
   SidebarInset,
-  SidebarProvider,
   SidebarTrigger,
 } from "@/components/ui/sidebar";
 import { ProtectedRoute } from "@/components/common/protected-route";
@@ -16,7 +15,6 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
-import { AppSidebar } from "@/components/navigation/app-sidebar";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -215,9 +213,7 @@ export default function AnalyticsPage() {
   };
 
   return (
-    <SidebarProvider>
-      <AppSidebar />
-      <SidebarInset className="h-[calc(100dvh-1rem)] flex flex-col">
+    <SidebarInset className="h-[calc(100dvh-1rem)] flex flex-col">
         <ProtectedRoute>
           <header className="flex h-16 shrink-0 items-center gap-2">
             <div className="flex items-center gap-2 px-4">
@@ -427,7 +423,6 @@ export default function AnalyticsPage() {
             </div>
           </div>
         </ProtectedRoute>
-      </SidebarInset>
-    </SidebarProvider>
+    </SidebarInset>
   );
 }

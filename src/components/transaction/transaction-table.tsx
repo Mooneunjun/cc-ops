@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
+import { useSidebar } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -61,6 +62,7 @@ interface TransactionTableProps {
 }
 
 export function TransactionTable({ data }: TransactionTableProps) {
+  const { state } = useSidebar();
   const [selectedTransaction, setSelectedTransaction] = useState<any>(null);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
 
@@ -246,6 +248,12 @@ export function TransactionTable({ data }: TransactionTableProps) {
   const handleItemsPerPageChange = (value: string) => {
     setItemsPerPage(value === "all" ? "all" : parseInt(value));
     setCurrentPage(1);
+  };
+
+  // 사이드바 상태에 따른 너비 계산
+  const getSidebarAwareMaxWidth = () => {
+    const sidebarWidth = state === "expanded" ? "16rem" : "0rem"; // 256px : 48px
+    return `calc(100vw - ${sidebarWidth} - 2rem)`;
   };
 
   return (
@@ -466,76 +474,83 @@ export function TransactionTable({ data }: TransactionTableProps) {
 
       {/* 테이블 */}
       <div className="rounded-lg border">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead className="text-center">송금번호</TableHead>
-              <TableHead className="text-center">송금국가</TableHead>
-              <TableHead className="text-center">지급국가</TableHead>
-              <TableHead className="text-right">송금금액</TableHead>
-              <TableHead className="text-center">송금상태</TableHead>
-              <TableHead>수취인명</TableHead>
-              <TableHead>신청일</TableHead>
-              <TableHead>지급완료일시</TableHead>
-              <TableHead className="text-center">액션</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {paginatedData.length === 0 ? (
+        <div
+          className="overflow-x-auto"
+          style={{
+            maxWidth: getSidebarAwareMaxWidth(),
+          }}
+        >
+          <Table style={{ minWidth: "800px" }}>
+            <TableHeader>
               <TableRow>
-                <TableCell
-                  colSpan={9}
-                  className="text-center py-8 text-muted-foreground"
-                >
-                  필터 조건에 맞는 데이터가 없습니다.
-                </TableCell>
+                <TableHead className="text-center">송금번호</TableHead>
+                <TableHead className="text-center">송금국가</TableHead>
+                <TableHead className="text-center">지급국가</TableHead>
+                <TableHead className="text-right">송금금액</TableHead>
+                <TableHead className="text-center">송금상태</TableHead>
+                <TableHead>수취인명</TableHead>
+                <TableHead>신청일</TableHead>
+                <TableHead>지급완료일시</TableHead>
+                <TableHead className="text-center">액션</TableHead>
               </TableRow>
-            ) : (
-              paginatedData.map((transaction: any) => (
-                <TableRow key={transaction.id}>
-                  <TableCell className="font-medium font-mono text-center">
-                    {transaction.no}
-                  </TableCell>
-                  <TableCell className="text-center">
-                    {transaction.send}
-                  </TableCell>
-                  <TableCell className="text-center">
-                    {transaction.receive}
-                  </TableCell>
-                  <TableCell className="text-right font-medium">
-                    {formatAmount(transaction.sourceAmt)} {transaction.source}
-                  </TableCell>
-                  <TableCell className="text-center">
-                    <span
-                      className={`inline-flex px-2 py-1 text-xs rounded-full ${getStatusBadgeClass(
-                        transaction.status
-                      )}`}
-                    >
-                      {transaction.status}
-                    </span>
-                  </TableCell>
-                  <TableCell>{transaction.reciFullName || "-"}</TableCell>
-                  <TableCell className="text-sm">
-                    {formatDateTime(transaction.applied)}
-                  </TableCell>
-                  <TableCell className="text-sm">
-                    {formatDateTime(transaction.finished)}
-                  </TableCell>
-                  <TableCell className="text-center">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleViewDetails(transaction)}
-                      className="h-8 w-8 p-0"
-                    >
-                      <Eye className="h-4 w-4" />
-                    </Button>
+            </TableHeader>
+            <TableBody>
+              {paginatedData.length === 0 ? (
+                <TableRow>
+                  <TableCell
+                    colSpan={9}
+                    className="text-center py-8 text-muted-foreground"
+                  >
+                    필터 조건에 맞는 데이터가 없습니다.
                   </TableCell>
                 </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
+              ) : (
+                paginatedData.map((transaction: any) => (
+                  <TableRow key={transaction.id}>
+                    <TableCell className="font-medium font-mono text-center">
+                      {transaction.no}
+                    </TableCell>
+                    <TableCell className="text-center">
+                      {transaction.send}
+                    </TableCell>
+                    <TableCell className="text-center">
+                      {transaction.receive}
+                    </TableCell>
+                    <TableCell className="text-right font-medium">
+                      {formatAmount(transaction.sourceAmt)} {transaction.source}
+                    </TableCell>
+                    <TableCell className="text-center">
+                      <span
+                        className={`inline-flex px-2 py-1 text-xs rounded-full ${getStatusBadgeClass(
+                          transaction.status
+                        )}`}
+                      >
+                        {transaction.status}
+                      </span>
+                    </TableCell>
+                    <TableCell>{transaction.reciFullName || "-"}</TableCell>
+                    <TableCell className="text-sm">
+                      {formatDateTime(transaction.applied)}
+                    </TableCell>
+                    <TableCell className="text-sm">
+                      {formatDateTime(transaction.finished)}
+                    </TableCell>
+                    <TableCell className="text-center">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleViewDetails(transaction)}
+                        className="h-8 w-8 p-0"
+                      >
+                        <Eye className="h-4 w-4" />
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </div>
       </div>
 
       {/* Pagination */}

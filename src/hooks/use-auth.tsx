@@ -7,6 +7,7 @@ import { supabase, type User } from "@/lib/supabase";
 type AuthContextType = {
   user: User | null;
   loading: boolean;
+  isInitialized: boolean;
   signIn: (email: string, password: string) => Promise<{ error?: any }>;
   signUp: (email: string, password: string) => Promise<{ error?: any }>;
   signOut: () => Promise<void>;
@@ -20,28 +21,88 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isInitialized, setIsInitialized] = useState(false);
+
+  console.log('🔄 AuthProvider render - loading:', loading, 'user:', user ? user.email : 'null', 'initialized:', isInitialized);
 
   useEffect(() => {
-    // 현재 사용자 세션 확인
-    const getSession = async () => {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
-      setUser(session?.user ? mapSupabaseUser(session.user) : null);
-      setLoading(false);
+    console.log('🚀 AuthProvider useEffect triggered');
+    let isMounted = true;
+    
+    const initialize = async () => {
+      try {
+        // Step 1: 캐시된 사용자 정보 즉시 로드
+        const cachedUser = localStorage.getItem('auth-user');
+        if (cachedUser && isMounted) {
+          try {
+            const parsedUser = JSON.parse(cachedUser);
+            console.log('✅ Setting cached user immediately:', parsedUser.email);
+            setUser(parsedUser);
+            setLoading(false);
+            setIsInitialized(true);
+          } catch (error) {
+            console.error('Cache parse error:', error);
+            localStorage.removeItem('auth-user');
+          }
+        } else {
+          console.log('⚠️ No cached user found');
+          setIsInitialized(true);
+        }
+
+        // Step 2: 백그라운드에서 실제 세션 확인
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
+        
+        if (isMounted) {
+          const mappedUser = session?.user ? mapSupabaseUser(session.user) : null;
+          console.log('🔍 Session verification result:', mappedUser ? mappedUser.email : 'none');
+          
+          setUser(mappedUser);
+          
+          // localStorage 업데이트
+          if (mappedUser) {
+            localStorage.setItem('auth-user', JSON.stringify(mappedUser));
+          } else {
+            localStorage.removeItem('auth-user');
+          }
+          
+          setLoading(false);
+        }
+      } catch (error) {
+        console.error('Auth initialization error:', error);
+        if (isMounted) {
+          setLoading(false);
+          setIsInitialized(true);
+        }
+      }
     };
 
-    getSession();
+    initialize();
 
     // 인증 상태 변경 감지
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ? mapSupabaseUser(session.user) : null);
-      setLoading(false);
+      if (isMounted) {
+        const mappedUser = session?.user ? mapSupabaseUser(session.user) : null;
+        setUser(mappedUser);
+        
+        // localStorage에 사용자 정보 캐시
+        if (mappedUser) {
+          localStorage.setItem('auth-user', JSON.stringify(mappedUser));
+        } else {
+          localStorage.removeItem('auth-user');
+        }
+        
+        setLoading(false);
+      }
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      isMounted = false;
+      subscription.unsubscribe();
+    };
   }, []);
 
   const mapSupabaseUser = (supabaseUser: SupabaseUser): User => ({
@@ -92,6 +153,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const value = {
     user,
     loading,
+    isInitialized,
     signIn,
     signUp,
     signOut,

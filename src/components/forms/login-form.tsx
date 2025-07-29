@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useAuth } from "@/hooks/use-auth";
+import { useAuthQuery } from "@/hooks/use-auth-query";
 import { Eye, EyeOff } from "lucide-react";
 import { toast } from "sonner";
 
@@ -18,7 +18,7 @@ export function LoginForm({
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const { signIn } = useAuth();
+  const { signIn } = useAuthQuery();
   const router = useRouter();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -26,28 +26,24 @@ export function LoginForm({
     setLoading(true);
 
     try {
-      const { error } = await signIn(email, password);
-
-      if (error) {
-        // 더 명확한 에러 메시지 제공
-        if (error.message === "Invalid login credentials") {
-          toast.error("Email or password is incorrect. Please try again.", {
-            style: { color: "var(--color-red-400)" },
-          });
-        } else {
-          toast.error(
-            error.message || "Login failed. Please check your credentials.",
-            { style: { color: "var(--color-red-400)" } }
-          );
-        }
+      await signIn({ email, password });
+      
+      toast.success("Login successful! Redirecting...");
+      router.push("/analytics/tx-analysis");
+    } catch (error: any) {
+      console.error("Login error:", error);
+      
+      // 더 명확한 에러 메시지 제공
+      if (error.message === "Invalid login credentials") {
+        toast.error("Email or password is incorrect. Please try again.", {
+          style: { color: "var(--color-red-400)" },
+        });
       } else {
-        toast.success("Login successful! Redirecting...");
-        router.push("/analytics/tx-analysis");
+        toast.error(
+          error.message || "Login failed. Please check your credentials.",
+          { style: { color: "var(--color-red-400)" } }
+        );
       }
-    } catch (err) {
-      toast.error("An error occurred during login.", {
-        style: { color: "var(--color-red-400)" },
-      });
     } finally {
       setLoading(false);
     }
