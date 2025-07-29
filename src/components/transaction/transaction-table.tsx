@@ -62,7 +62,7 @@ interface TransactionTableProps {
 }
 
 export function TransactionTable({ data }: TransactionTableProps) {
-  const { state } = useSidebar();
+  const { state, isMobile } = useSidebar();
   const [selectedTransaction, setSelectedTransaction] = useState<any>(null);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
 
@@ -252,7 +252,14 @@ export function TransactionTable({ data }: TransactionTableProps) {
 
   // 사이드바 상태에 따른 너비 계산
   const getSidebarAwareMaxWidth = () => {
-    const sidebarWidth = state === "expanded" ? "16rem" : "0rem"; // 256px : 48px
+    // 모바일에서는 사이드바가 오버레이로 표시되므로 공간을 차지하지 않음
+    // 데스크톱에서만 사이드바가 실제 공간을 차지함
+    if (isMobile) {
+      return `calc(100vw - 2rem)`;
+    }
+
+    // 데스크톱에서의 사이드바 너비 계산
+    const sidebarWidth = state === "expanded" ? "16rem" : "0rem";
     return `calc(100vw - ${sidebarWidth} - 2rem)`;
   };
 
@@ -260,9 +267,9 @@ export function TransactionTable({ data }: TransactionTableProps) {
     <>
       {/* 필터 섹션 */}
       <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-lg">
-            <Filter className="h-5 w-5" />
+        <CardHeader className="pb-4 sm:pb-6">
+          <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
+            <Filter className="h-4 w-4 sm:h-5 sm:w-5" />
             필터 및 검색
           </CardTitle>
         </CardHeader>
@@ -435,39 +442,42 @@ export function TransactionTable({ data }: TransactionTableProps) {
           </div>
 
           {/* 필터 액션 버튼 */}
-          <div className="flex justify-between items-center pt-4">
-            <div className="flex items-center gap-4">
-              <div className="text-sm text-muted-foreground">
-                총 {data.rows?.length || 0}건 중 {filteredData.length}건 표시
+          <div className="pt-4">
+            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
+              <div className="flex justify-between sm:gap-4 items-center">
+                <div className="text-sm text-muted-foreground">
+                  총 {data.rows?.length || 0}건 중 {filteredData.length}건 표시
+                </div>
+                <div className="flex items-center gap-2">
+                  <Label htmlFor="items-per-page" className="text-sm">
+                    페이지당:
+                  </Label>
+                  <Select
+                    value={itemsPerPage.toString()}
+                    onValueChange={handleItemsPerPageChange}
+                  >
+                    <SelectTrigger id="items-per-page" className="w-24">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="20">20개</SelectItem>
+                      <SelectItem value="50">50개</SelectItem>
+                      <SelectItem value="100">100개</SelectItem>
+                      <SelectItem value="all">전체</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
-              <div className="flex items-center gap-2">
-                <Label htmlFor="items-per-page" className="text-sm">
-                  페이지당:
-                </Label>
-                <Select
-                  value={itemsPerPage.toString()}
-                  onValueChange={handleItemsPerPageChange}
-                >
-                  <SelectTrigger id="items-per-page" className="w-24">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="20">20개</SelectItem>
-                    <SelectItem value="50">50개</SelectItem>
-                    <SelectItem value="100">100개</SelectItem>
-                    <SelectItem value="all">전체</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+              
+              <Button
+                variant="outline"
+                onClick={clearFilters}
+                className="w-full sm:w-auto flex items-center justify-center gap-2"
+              >
+                <X className="h-4 w-4" />
+                필터 초기화
+              </Button>
             </div>
-            <Button
-              variant="outline"
-              onClick={clearFilters}
-              className="flex items-center gap-2"
-            >
-              <X className="h-4 w-4" />
-              필터 초기화
-            </Button>
           </div>
         </CardContent>
       </Card>

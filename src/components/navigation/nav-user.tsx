@@ -36,14 +36,11 @@ export const NavUser = memo(function NavUser() {
   const router = useRouter();
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
 
-  console.log('🔥 NavUser render (Memoized) - loading:', loading, 'user:', user ? user.email : 'null');
-
   // 로딩이 끝났는데 user가 없으면 null 반환
   if (!loading && !user) return null;
 
   // 로딩 중이고 user가 없을 때만 스켈레톤 표시
   if (loading && !user) {
-    console.log('🟢 NavUser - Showing skeleton (TanStack Query)');
     return (
       <>
         <SidebarMenu>

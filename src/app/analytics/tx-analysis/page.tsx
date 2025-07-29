@@ -240,52 +240,87 @@ export default function AnalyticsPage() {
             <div className="flex flex-col gap-4 p-4 pt-0 h-full">
               {/* 헤더 */}
               {uploadedData && (
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h1 className="text-2xl font-bold tracking-tight">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                  <div className="flex-1">
+                    <h1 className="text-xl sm:text-2xl font-bold tracking-tight">
                       Transaction Analysis
                     </h1>
-                    <p className="text-muted-foreground">
+                    <p className="text-sm sm:text-base text-muted-foreground">
                       Analyze transaction data and visualize statistics.
                     </p>
                   </div>
-                  <div className="flex items-center gap-4">
-                    <div className="text-right">
-                      <p className="text-sm font-medium">
-                        {uploadedFile?.name}
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        {uploadedData.rows?.length || 0}건의 거래내역
-                      </p>
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
+                    <div className="flex justify-between sm:block sm:text-right">
+                      <div>
+                        <p className="text-sm font-medium">
+                          {uploadedFile?.name}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          {uploadedData.rows?.length || 0}건의 거래내역
+                        </p>
+                      </div>
+                      <div className="sm:hidden">
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="flex items-center gap-2"
+                            >
+                              <X className="h-4 w-4" />
+                              Reset
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>
+                                Confirm Data Reset
+                              </AlertDialogTitle>
+                              <AlertDialogDescription>
+                                All uploaded transaction data will be deleted.
+                                Continue?
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancel</AlertDialogCancel>
+                              <AlertDialogAction onClick={clearUploadedFile}>
+                                Reset
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      </div>
                     </div>
-                    <AlertDialog>
-                      <AlertDialogTrigger asChild>
-                        <Button
-                          variant="outline"
-                          className="flex items-center gap-2"
-                        >
-                          <X className="h-4 w-4" />
-                          Reset
-                        </Button>
-                      </AlertDialogTrigger>
-                      <AlertDialogContent>
-                        <AlertDialogHeader>
-                          <AlertDialogTitle>
-                            Confirm Data Reset
-                          </AlertDialogTitle>
-                          <AlertDialogDescription>
-                            All uploaded transaction data will be deleted.
-                            Continue?
-                          </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel>Cancel</AlertDialogCancel>
-                          <AlertDialogAction onClick={clearUploadedFile}>
+                    <div className="hidden sm:block">
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button
+                            variant="outline"
+                            className="flex items-center gap-2"
+                          >
+                            <X className="h-4 w-4" />
                             Reset
-                          </AlertDialogAction>
-                        </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>
+                              Confirm Data Reset
+                            </AlertDialogTitle>
+                            <AlertDialogDescription>
+                              All uploaded transaction data will be deleted.
+                              Continue?
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogAction onClick={clearUploadedFile}>
+                              Reset
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    </div>
                   </div>
                 </div>
               )}

@@ -47,23 +47,14 @@ export function useAuthQuery() {
   // 로그인 뮤테이션
   const signInMutation = useMutation({
     mutationFn: async ({ email, password }: { email: string; password: string }) => {
-      console.log('로그인 시도:', { 
-        email: email?.trim() || '', 
-        passwordLength: password?.length || 0,
-        emailType: typeof email,
-        passwordType: typeof password
-      });
-      
       if (!email || !password) {
         throw new Error('이메일과 비밀번호를 입력해주세요.');
       }
       
-      const { data, error } = await supabase.auth.signInWithPassword({
+      const { error } = await supabase.auth.signInWithPassword({
         email: email.trim(),
         password,
       });
-      
-      console.log('로그인 응답:', { data, error });
       
       if (error) throw error;
       return true;
