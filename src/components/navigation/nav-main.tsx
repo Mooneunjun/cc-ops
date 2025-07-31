@@ -60,7 +60,7 @@ export function NavMain({
                     </SidebarMenuButton>
                   </CollapsibleTrigger>
                 ) : (
-                  // 하위 항목이 없는 경우: Next.js Link로 SPA 네비게이션
+                  // 하위 항목이 없는 경우: Link로 SPA 네비게이션
                   <SidebarMenuButton asChild tooltip={item.title}>
                     <Link href={item.url}>
                       <item.icon />
