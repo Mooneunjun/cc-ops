@@ -1,10 +1,7 @@
 "use client";
 
 import { useState, useCallback, useEffect } from "react";
-import {
-  SidebarInset,
-  SidebarTrigger,
-} from "@/components/ui/sidebar";
+import { SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
 import { ProtectedRoute } from "@/components/common/protected-route";
 import { Separator } from "@/components/ui/separator";
 import {
@@ -214,88 +211,57 @@ export default function AnalyticsPage() {
 
   return (
     <SidebarInset className="h-[calc(100dvh-1rem)] flex flex-col">
-        <ProtectedRoute>
-          <header className="flex h-16 shrink-0 items-center gap-2">
-            <div className="flex items-center gap-2 px-4">
-              <SidebarTrigger className="-ml-1" />
-              <Separator
-                orientation="vertical"
-                className="mr-2 data-[orientation=vertical]:h-4"
-              />
-              <Breadcrumb>
-                <BreadcrumbList>
-                  <BreadcrumbItem className="hidden md:block">
-                    <BreadcrumbLink href="#">Analytics</BreadcrumbLink>
-                  </BreadcrumbItem>
-                  <BreadcrumbSeparator className="hidden md:block" />
-                  <BreadcrumbItem>
-                    <BreadcrumbPage>TX Analysis</BreadcrumbPage>
-                  </BreadcrumbItem>
-                </BreadcrumbList>
-              </Breadcrumb>
-            </div>
-          </header>
+      <ProtectedRoute>
+        <header className="flex h-16 shrink-0 items-center gap-2">
+          <div className="flex items-center gap-2 px-4">
+            <SidebarTrigger className="-ml-1" />
+            <Separator
+              orientation="vertical"
+              className="mr-2 data-[orientation=vertical]:h-4"
+            />
+            <Breadcrumb>
+              <BreadcrumbList>
+                <BreadcrumbItem className="hidden md:block">
+                  <BreadcrumbLink href="#">Analytics</BreadcrumbLink>
+                </BreadcrumbItem>
+                <BreadcrumbSeparator className="hidden md:block" />
+                <BreadcrumbItem>
+                  <BreadcrumbPage>TX Analysis</BreadcrumbPage>
+                </BreadcrumbItem>
+              </BreadcrumbList>
+            </Breadcrumb>
+          </div>
+        </header>
 
-          <div className="flex-1 overflow-y-auto mb-4">
-            <div className="flex flex-col gap-4 p-4 pt-0 h-full">
-              {/* 헤더 */}
-              {uploadedData && (
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                  <div className="flex-1">
-                    <h1 className="text-xl sm:text-2xl font-bold tracking-tight">
-                      Transaction Analysis
-                    </h1>
-                    <p className="text-sm sm:text-base text-muted-foreground">
-                      Analyze transaction data and visualize statistics.
-                    </p>
-                  </div>
-                  <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
-                    <div className="flex justify-between sm:block sm:text-right">
-                      <div>
-                        <p className="text-sm font-medium">
-                          {uploadedFile?.name}
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                          {uploadedData.rows?.length || 0}건의 거래내역
-                        </p>
-                      </div>
-                      <div className="sm:hidden">
-                        <AlertDialog>
-                          <AlertDialogTrigger asChild>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="flex items-center gap-2"
-                            >
-                              <X className="h-4 w-4" />
-                              Reset
-                            </Button>
-                          </AlertDialogTrigger>
-                          <AlertDialogContent>
-                            <AlertDialogHeader>
-                              <AlertDialogTitle>
-                                Confirm Data Reset
-                              </AlertDialogTitle>
-                              <AlertDialogDescription>
-                                All uploaded transaction data will be deleted.
-                                Continue?
-                              </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel>Cancel</AlertDialogCancel>
-                              <AlertDialogAction onClick={clearUploadedFile}>
-                                Reset
-                              </AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
-                      </div>
+        <div className="flex-1 overflow-y-auto mb-4">
+          <div className="flex flex-col gap-4 p-4 pt-0 h-full">
+            {/* 헤더 */}
+            {uploadedData && (
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                <div className="flex-1">
+                  <h1 className="text-xl sm:text-2xl font-bold tracking-tight">
+                    Transaction Analysis
+                  </h1>
+                  <p className="text-sm sm:text-base text-muted-foreground">
+                    Analyze transaction data and visualize statistics.
+                  </p>
+                </div>
+                <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
+                  <div className="flex justify-between sm:block sm:text-right">
+                    <div>
+                      <p className="text-sm font-medium">
+                        {uploadedFile?.name}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {uploadedData.rows?.length || 0}건의 거래내역
+                      </p>
                     </div>
-                    <div className="hidden sm:block">
+                    <div className="sm:hidden">
                       <AlertDialog>
                         <AlertDialogTrigger asChild>
                           <Button
                             variant="outline"
+                            size="sm"
                             className="flex items-center gap-2"
                           >
                             <X className="h-4 w-4" />
@@ -322,60 +288,88 @@ export default function AnalyticsPage() {
                       </AlertDialog>
                     </div>
                   </div>
+                  <div className="hidden sm:block">
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button
+                          variant="outline"
+                          className="flex items-center gap-2"
+                        >
+                          <X className="h-4 w-4" />
+                          Reset
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>
+                            Confirm Data Reset
+                          </AlertDialogTitle>
+                          <AlertDialogDescription>
+                            All uploaded transaction data will be deleted.
+                            Continue?
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                          <AlertDialogAction onClick={clearUploadedFile}>
+                            Reset
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  </div>
                 </div>
-              )}
+              </div>
+            )}
 
-              {/* 분석 내용 영역 */}
-              {!isDataLoaded ? (
-                <div className="flex flex-col items-center justify-center h-full text-center text-muted-foreground">
-                  <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-                  <p className="text-sm mt-4">데이터를 불러오는 중...</p>
-                </div>
-              ) : uploadedData ? (
-                <TransactionTable data={uploadedData} />
-              ) : (
-                <div className="w-full h-full">
-                  {/* 메인 섹션 - 화면 중앙 */}
-                  <div className="flex flex-col items-center justify-center h-full text-center space-y-12 px-4">
-                    <div className="space-y-6">
-                      <h1 className="text-4xl md:text-6xl font-bold tracking-tight">
-                        Transaction Analysis
-                      </h1>
-                      <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto leading-relaxed">
-                        Upload transaction data and visualize statistics.
-                      </p>
-                    </div>
+            {/* 분석 내용 영역 */}
+            {!isDataLoaded ? (
+              <div className="flex flex-col items-center justify-center h-full text-center text-muted-foreground">
+                <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                <p className="text-sm mt-4">데이터를 불러오는 중...</p>
+              </div>
+            ) : uploadedData ? (
+              <TransactionTable data={uploadedData} />
+            ) : (
+              <div className="w-full h-full">
+                {/* 메인 섹션 - 화면 중앙 */}
+                <div className="flex flex-col items-center justify-center h-full text-center space-y-12 px-4">
+                  <div className="space-y-4">
+                    <h1 className="text-4xl md:text-6xl font-bold tracking-tight">
+                      Transaction Analysis
+                    </h1>
+                    <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto leading-relaxed">
+                      Upload transaction data and visualize statistics.
+                    </p>
+                  </div>
 
-                    <div className="flex flex-col sm:flex-row gap-4">
-                      <Dialog>
-                        <DialogTrigger asChild>
-                          <Button
-                            size="lg"
-                            className="gap-2 text-base px-8 py-6"
-                          >
-                            <Upload className="h-5 w-5" />
-                            Get Started
-                          </Button>
-                        </DialogTrigger>
-                        <DialogContent className="sm:max-w-md">
-                          <DialogHeader>
-                            <DialogTitle>Upload Transaction Data</DialogTitle>
-                            <DialogDescription>
-                              Upload a JSON file of transaction data.
-                            </DialogDescription>
-                          </DialogHeader>
+                  <div className="flex flex-col sm:flex-row gap-4 mb-4">
+                    <Dialog>
+                      <DialogTrigger asChild>
+                        <Button size="lg" className="gap-2 text-sm px-8 py-6">
+                          <Upload className="h-4 w-4" />
+                          Get Started
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent className="sm:max-w-md">
+                        <DialogHeader>
+                          <DialogTitle>Upload Transaction Data</DialogTitle>
+                          <DialogDescription>
+                            Upload a JSON file of transaction data.
+                          </DialogDescription>
+                        </DialogHeader>
 
-                          <div className="space-y-4">
-                            {/* 파일 업로드 영역 */}
-                            <div
-                              onDrop={!isUploading ? handleDrop : undefined}
-                              onDragOver={
-                                !isUploading ? handleDragOver : undefined
-                              }
-                              onDragLeave={
-                                !isUploading ? handleDragLeave : undefined
-                              }
-                              className={`
+                        <div className="space-y-4">
+                          {/* 파일 업로드 영역 */}
+                          <div
+                            onDrop={!isUploading ? handleDrop : undefined}
+                            onDragOver={
+                              !isUploading ? handleDragOver : undefined
+                            }
+                            onDragLeave={
+                              !isUploading ? handleDragLeave : undefined
+                            }
+                            className={`
                             border-2 border-dashed rounded-lg p-8 text-center transition-colors h-[240px] flex flex-col items-center justify-center
                             ${
                               isUploading
@@ -385,79 +379,77 @@ export default function AnalyticsPage() {
                                 : "border-gray-300 hover:border-gray-400"
                             }
                           `}
-                            >
-                              {isUploading ? (
-                                // 로딩 상태
-                                <div className="flex flex-col items-center justify-center h-full space-y-4">
-                                  <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-                                  <div className="space-y-1 text-center">
-                                    <p className="text-sm font-medium">
-                                      Processing file...
-                                    </p>
-                                    <p className="text-xs text-muted-foreground">
-                                      Please wait while we process your JSON
-                                      file.
-                                    </p>
-                                  </div>
+                          >
+                            {isUploading ? (
+                              // 로딩 상태
+                              <div className="flex flex-col items-center justify-center h-full space-y-4">
+                                <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+                                <div className="space-y-1 text-center">
+                                  <p className="text-sm font-medium">
+                                    Processing file...
+                                  </p>
+                                  <p className="text-xs text-muted-foreground">
+                                    Please wait while we process your JSON file.
+                                  </p>
                                 </div>
-                              ) : (
-                                // 업로드 상태
-                                <div className="flex flex-col items-center justify-center h-full space-y-4">
-                                  <FileJson className="h-12 w-12 text-gray-400" />
-                                  <div className="space-y-1 text-center">
-                                    <p className="text-sm font-medium">
-                                      Drag and drop a JSON file to upload.
-                                    </p>
-                                    <p className="text-xs text-muted-foreground">
-                                      Or click the button below to select a
-                                      file.
-                                    </p>
-                                  </div>
-                                  <div>
-                                    <input
-                                      type="file"
-                                      accept=".json"
-                                      onChange={handleFileInput}
-                                      className="hidden"
-                                      id="file-upload-main"
-                                    />
-                                    <label htmlFor="file-upload-main">
-                                      <Button
-                                        variant="outline"
-                                        className="cursor-pointer"
-                                        asChild
-                                      >
-                                        <span>Select File</span>
-                                      </Button>
-                                    </label>
-                                  </div>
+                              </div>
+                            ) : (
+                              // 업로드 상태
+                              <div className="flex flex-col items-center justify-center h-full space-y-4">
+                                <FileJson className="h-12 w-12 text-gray-400" />
+                                <div className="space-y-1 text-center">
+                                  <p className="text-sm font-medium">
+                                    Drag and drop a JSON file to upload.
+                                  </p>
+                                  <p className="text-xs text-muted-foreground">
+                                    Or click the button below to select a file.
+                                  </p>
                                 </div>
-                              )}
-                            </div>
+                                <div>
+                                  <input
+                                    type="file"
+                                    accept=".json"
+                                    onChange={handleFileInput}
+                                    className="hidden"
+                                    id="file-upload-main"
+                                  />
+                                  <label htmlFor="file-upload-main">
+                                    <Button
+                                      variant="outline"
+                                      className="cursor-pointer"
+                                      asChild
+                                    >
+                                      <span>Select File</span>
+                                    </Button>
+                                  </label>
+                                </div>
+                              </div>
+                            )}
                           </div>
-                        </DialogContent>
-                      </Dialog>
+                        </div>
+                      </DialogContent>
+                    </Dialog>
 
-                      <Button
-                        variant="outline"
-                        size="lg"
-                        className="text-base px-8 py-6"
-                      >
-                        Learn More
-                      </Button>
-                    </div>
+                    <Button
+                      variant="outline"
+                      size="default"
+                      className="text-sm px-8 py-6"
+                    >
+                      Learn More
+                    </Button>
+                  </div>
 
-                    <div className="text-sm text-muted-foreground">
-                      <code className="bg-muted px-2 py-1 rounded text-xs">
-                        JSON format transaction data is supported.
-                      </code>
-                    </div>
+                  <div className="text-sm text-muted-foreground">
+                    <code className="bg-muted px-2 py-1 rounded text-xs">
+                      JSON format transaction data is supported.
+                    </code>
                   </div>
                 </div>
-              )}
-            </div>
+              </div>
+            )}
           </div>
-        </ProtectedRoute>
+        </div>
+      </ProtectedRoute>
     </SidebarInset>
   );
 }
