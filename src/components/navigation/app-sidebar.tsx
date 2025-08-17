@@ -131,7 +131,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                   {/* wirebarley svg */}
 
                   <img
-                    src="/wirebarley.svg"
+                    src="/Wirebarley.svg"
                     alt="WireBarley"
                     className="size-8 rounded-md"
                   />
