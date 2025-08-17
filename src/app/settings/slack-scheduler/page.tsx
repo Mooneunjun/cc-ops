@@ -271,29 +271,30 @@ export default function Page() {
   );
 
   return (
-    <SidebarInset>
-        <ProtectedRoute>
-          <header className="flex h-16 shrink-0 items-center gap-2">
-            <div className="flex items-center gap-2 px-4">
-              <SidebarTrigger className="-ml-1" />
-              <Separator
-                orientation="vertical"
-                className="mr-2 data-[orientation=vertical]:h-4"
-              />
-              <Breadcrumb>
-                <BreadcrumbList>
-                  <BreadcrumbItem className="hidden md:block">
-                    <BreadcrumbLink href="#">Settings</BreadcrumbLink>
-                  </BreadcrumbItem>
-                  <BreadcrumbSeparator className="hidden md:block" />
-                  <BreadcrumbItem>
-                    <BreadcrumbPage>Slack-Scheduler</BreadcrumbPage>
-                  </BreadcrumbItem>
-                </BreadcrumbList>
-              </Breadcrumb>
-            </div>
-          </header>
+    <SidebarInset className="h-[calc(100dvh-1rem)] flex flex-col">
+      <ProtectedRoute>
+        <header className="flex h-16 shrink-0 items-center gap-2">
+          <div className="flex items-center gap-2 px-4">
+            <SidebarTrigger className="-ml-1" />
+            <Separator
+              orientation="vertical"
+              className="mr-2 data-[orientation=vertical]:h-4"
+            />
+            <Breadcrumb>
+              <BreadcrumbList>
+                <BreadcrumbItem className="hidden md:block">
+                  <BreadcrumbLink href="#">Settings</BreadcrumbLink>
+                </BreadcrumbItem>
+                <BreadcrumbSeparator className="hidden md:block" />
+                <BreadcrumbItem>
+                  <BreadcrumbPage>Slack-Scheduler</BreadcrumbPage>
+                </BreadcrumbItem>
+              </BreadcrumbList>
+            </Breadcrumb>
+          </div>
+        </header>
 
+        <div className="flex-1 overflow-y-auto">
           <div className="flex flex-1 flex-col gap-4 p-4 pt-0 max-w-full overflow-hidden">
             {/* 헤더 */}
             <div className="flex items-center justify-between">
@@ -363,7 +364,8 @@ export default function Page() {
               </div>
             )}
           </div>
-        </ProtectedRoute>
+        </div>
+      </ProtectedRoute>
     </SidebarInset>
   );
 }

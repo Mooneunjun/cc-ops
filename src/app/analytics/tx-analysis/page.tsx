@@ -33,7 +33,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { TransactionTable } from "@/components/transaction/transaction-table";
-import { Upload, FileJson, X } from "lucide-react";
+import { Upload, FileText, X } from "lucide-react";
 import { toast } from "sonner";
 
 export default function AnalyticsPage() {
@@ -233,8 +233,8 @@ export default function AnalyticsPage() {
           </div>
         </header>
 
-        <div className="flex-1 overflow-y-auto mb-4">
-          <div className="flex flex-col gap-4 p-4 pt-0 h-full">
+        <div className="flex-1 overflow-y-auto">
+          <div className={`flex flex-col gap-4 p-4 pt-0 ${uploadedData ? '' : 'h-full'}`}>
             {/* 헤더 */}
             {uploadedData && (
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -396,7 +396,10 @@ export default function AnalyticsPage() {
                             ) : (
                               // 업로드 상태
                               <div className="flex flex-col items-center justify-center h-full space-y-4">
-                                <FileJson className="h-12 w-12 text-gray-400" />
+                                <FileText
+                                  className="h-12 w-12 text-gray-400"
+                                  strokeWidth={1.5}
+                                />
                                 <div className="space-y-1 text-center">
                                   <p className="text-sm font-medium">
                                     Drag and drop a JSON file to upload.
