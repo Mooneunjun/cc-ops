@@ -11,7 +11,7 @@ export default function LoginPage() {
             <div className="bg-white text-black flex aspect-square size-8 items-center justify-center rounded-lg">
               {/* wirebarley svg */}
               <img
-                src="/wirebarley.svg"
+                src="/Wirebarley.svg"
                 alt="WireBarley"
                 className="size-8 rounded-md"
               />
