@@ -646,7 +646,7 @@ export function TransactionTable({ data }: TransactionTableProps) {
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">
-                  평균 송금금액
+                  1건 평균 송금금액
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -914,7 +914,9 @@ export function TransactionTable({ data }: TransactionTableProps) {
           {/* 피벗테이블 */}
           <div className="space-y-4">
             <div className="flex justify-between items-center">
-              <h3 className="text-lg font-semibold">월별/연도별 송금 분석</h3>
+              <h3 className="text-xl h-10 flex items-center font-semibold">
+                월별/연도별 송금 분석
+              </h3>
               <div className="flex items-center gap-4">
                 {selectedCells.size > 0 && (
                   <div className="flex items-center gap-2">
