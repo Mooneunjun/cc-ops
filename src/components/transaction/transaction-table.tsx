@@ -46,15 +46,16 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Eye,
-  Search,
   Filter,
-  X,
   ChevronDown,
   Calendar as CalendarIcon,
 } from "lucide-react";
 import { format } from "date-fns";
 import { ko } from "date-fns/locale";
 import { TransactionDetailModal } from "./transaction-detail-modal";
+import { ChartsTab } from "./charts-tab";
+import { StatusBadge } from "./status-badge";
+import { SearchFilter } from "./search-filter";
 interface TransactionTableProps {
   data: any;
 }
@@ -171,27 +172,6 @@ export function TransactionTable({ data }: TransactionTableProps) {
     const minutes = String(date.getMinutes()).padStart(2, "0");
     const seconds = String(date.getSeconds()).padStart(2, "0");
     return `${year}/${month}/${day} ${hours}:${minutes}:${seconds}`;
-  };
-  const getStatusBadgeClass = (status: string) => {
-    switch (status) {
-      case "지급완료":
-        return "bg-green-100 text-green-800";
-      case "송금거절":
-        return "bg-red-100 text-red-800";
-      case "지급준비중":
-        return "bg-blue-100 text-blue-800";
-      case "지급진행중":
-        return "bg-blue-100 text-blue-800";
-      case "환불준비중":
-        return "bg-yellow-100 text-yellow-800";
-      case "환불완료":
-        return "bg-purple-100 text-purple-800";
-      case "환불진행중":
-        return "bg-purple-100 text-purple-800";
-      case "시간초과":
-      default:
-        return "bg-gray-100 text-gray-800";
-    }
   };
   // 고유한 송금상태 목록 추출
   const uniqueStatuses = useMemo(() => {
@@ -401,32 +381,14 @@ export function TransactionTable({ data }: TransactionTableProps) {
       <Card>
         <CardContent className="space-y-6">
           {/* 검색 */}
-          <div className="space-y-2">
-            <div className="flex justify-between items-center">
-              <Label htmlFor="search">검색</Label>
-              <Button
-                variant="outline"
-                onClick={clearFilters}
-                className="flex items-center justify-center gap-2"
-              >
-                <X className="h-4 w-4" />
-                필터 초기화
-              </Button>
-            </div>
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                id="search"
-                placeholder="송금번호, 수취인명, 송금국가, 지급국가 검색..."
-                value={searchTerm}
-                onChange={(e) => {
-                  setSearchTerm(e.target.value);
-                  setCurrentPage(1); // 검색 시 첫 페이지로
-                }}
-                className="pl-10"
-              />
-            </div>
-          </div>
+          <SearchFilter
+            searchTerm={searchTerm}
+            onSearchChange={(value) => {
+              setSearchTerm(value);
+              setCurrentPage(1); // 검색 시 첫 페이지로
+            }}
+            onClearFilters={clearFilters}
+          />
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             {/* 송금상태 필터 */}
             <div className="space-y-2">
@@ -457,13 +419,7 @@ export function TransactionTable({ data }: TransactionTableProps) {
                       }
                       className="relative flex w-full cursor-default items-center rounded-sm py-1.5 pl-2 pr-8 text-sm outline-none select-none data-[disabled]:pointer-events-none data-[disabled]:opacity-50 focus:bg-accent focus:text-accent-foreground [&>span]:!left-auto [&>span]:!right-2"
                     >
-                      <span
-                        className={`inline-flex px-2 py-1 text-xs rounded-full ${getStatusBadgeClass(
-                          status as string
-                        )}`}
-                      >
-                        {status as string}
-                      </span>
+                      <StatusBadge status={status as string} />
                     </DropdownMenuCheckboxItem>
                   ))}
                 </DropdownMenuContent>
@@ -810,13 +766,7 @@ export function TransactionTable({ data }: TransactionTableProps) {
                           {transaction.source}
                         </TableCell>
                         <TableCell className="text-center">
-                          <span
-                            className={`inline-flex px-2 py-1 text-xs rounded-full ${getStatusBadgeClass(
-                              transaction.status
-                            )}`}
-                          >
-                            {transaction.status}
-                          </span>
+                          <StatusBadge status={transaction.status} />
                         </TableCell>
                         <TableCell className="text-right">
                           {transaction.reciFullName || "-"}
@@ -957,12 +907,7 @@ export function TransactionTable({ data }: TransactionTableProps) {
         </TabsContent>
 
         <TabsContent value="charts" className="space-y-4">
-          <div className="flex items-center justify-center h-64 text-muted-foreground">
-            <div className="text-center">
-              <h3 className="text-lg font-semibold mb-2">차트 뷰</h3>
-              <p className="text-sm">곧 구현될 예정입니다.</p>
-            </div>
-          </div>
+          <ChartsTab />
         </TabsContent>
 
         <TabsContent value="insights" className="space-y-4">
