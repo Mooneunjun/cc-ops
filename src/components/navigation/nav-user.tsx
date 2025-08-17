@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, memo } from "react";
 import {
   BadgeCheck,
   Bell,
@@ -26,44 +26,17 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "@/components/ui/sidebar";
-import { useAuth } from "@/hooks/use-auth";
+import { useAuthQuery } from "@/hooks/use-auth-query";
 import { useRouter } from "next/navigation";
 import { EditProfileModal } from "@/components/modals/edit-profile-modal";
 
-export function NavUser() {
+export const NavUser = memo(function NavUser() {
   const { isMobile } = useSidebar();
-  const { user, loading, signOut } = useAuth();
+  const { user, signOut } = useAuthQuery();
   const router = useRouter();
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
 
-  // 로딩이 끝났는데 user가 없으면 null 반환
-  if (!loading && !user) return null;
-
-  // 로딩 중일 때는 스켈레톤 표시
-  if (loading) {
-    return (
-      <>
-        <SidebarMenu>
-          <SidebarMenuItem>
-            <SidebarMenuButton size="lg" className="animate-pulse">
-              <div className="h-8 w-8 rounded-lg bg-muted"></div>
-              <div className="grid flex-1 gap-2 text-left text-sm leading-tight">
-                <div className="h-4 w-20 bg-muted rounded"></div>
-                <div className="h-3 w-32 bg-muted rounded"></div>
-              </div>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-        </SidebarMenu>
-
-        <EditProfileModal
-          isOpen={isProfileModalOpen}
-          onClose={() => setIsProfileModalOpen(false)}
-        />
-      </>
-    );
-  }
-
-  // user가 null이 아님을 보장하는 타입 가드
+  // 사용자가 없으면 아무것도 표시하지 않음 (404 페이지 등에서 스켈레톤 방지)
   if (!user) return null;
 
   const handleSignOut = async () => {
@@ -168,4 +141,4 @@ export function NavUser() {
       />
     </>
   );
-}
+});

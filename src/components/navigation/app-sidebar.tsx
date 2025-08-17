@@ -15,6 +15,7 @@ import {
 import { NavMain } from "@/components/navigation/nav-main";
 import { NavProjects } from "@/components/navigation/nav-projects";
 import { NavUser } from "@/components/navigation/nav-user";
+import Link from "next/link";
 import {
   Sidebar,
   SidebarContent,
@@ -125,7 +126,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton size="lg" asChild>
-              <a href="#">
+              <Link href="/">
                 <div className="bg-white text-black flex aspect-square size-8 items-center justify-center rounded-lg">
                   {/* wirebarley svg */}
 
@@ -139,7 +140,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                   <span className="truncate font-medium">WireBarley</span>
                   <span className="truncate text-xs">CCT</span>
                 </div>
-              </a>
+              </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>

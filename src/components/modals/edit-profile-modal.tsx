@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useAuth } from "@/hooks/use-auth";
+import { useAuthQuery } from "@/hooks/use-auth-query";
 import {
   Dialog,
   DialogContent,
@@ -23,7 +23,7 @@ interface EditProfileModalProps {
 }
 
 export function EditProfileModal({ isOpen, onClose }: EditProfileModalProps) {
-  const { user, updateProfile, updatePassword } = useAuth();
+  const { user, updateProfile, updatePassword } = useAuthQuery();
 
   // Profile form state
   const [fullName, setFullName] = useState(
@@ -38,6 +38,7 @@ export function EditProfileModal({ isOpen, onClose }: EditProfileModalProps) {
   const [passwordLoading, setPasswordLoading] = useState(false);
 
   // Password visibility state
+  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
@@ -65,23 +66,18 @@ export function EditProfileModal({ isOpen, onClose }: EditProfileModalProps) {
     }
 
     try {
-      const { error } = await updateProfile({
+      await updateProfile({
         full_name: fullName.trim(),
       });
 
-      if (error) {
-        toast.error(error.message || "Profile update failed", {
-          style: { color: "var(--color-red-400)" },
-        });
-      } else {
-        toast.success("Your profile has been updated successfully.");
-        // 성공 시 잠시 후 다이얼로그 닫기
-        setTimeout(() => {
-          onClose();
-        }, 1500);
-      }
-    } catch (err) {
-      toast.error("An error occurred while updating profile", {
+      toast.success("Your profile has been updated successfully.");
+      // 성공 시 잠시 후 다이얼로그 닫기
+      setTimeout(() => {
+        onClose();
+      }, 1500);
+    } catch (error: any) {
+      console.error("Profile update error:", error);
+      toast.error(error.message || "Profile update failed", {
         style: { color: "var(--color-red-400)" },
       });
     } finally {
@@ -94,6 +90,14 @@ export function EditProfileModal({ isOpen, onClose }: EditProfileModalProps) {
     setPasswordLoading(true);
 
     // Validation
+    if (!currentPassword) {
+      toast.error("Current password is required", {
+        style: { color: "var(--color-red-400)" },
+      });
+      setPasswordLoading(false);
+      return;
+    }
+
     if (newPassword !== confirmPassword) {
       toast.error("New passwords do not match", {
         style: { color: "var(--color-red-400)" },
@@ -110,25 +114,28 @@ export function EditProfileModal({ isOpen, onClose }: EditProfileModalProps) {
       return;
     }
 
-    try {
-      const { error } = await updatePassword(newPassword);
+    if (currentPassword === newPassword) {
+      toast.error("New password must be different from current password", {
+        style: { color: "var(--color-red-400)" },
+      });
+      setPasswordLoading(false);
+      return;
+    }
 
-      if (error) {
-        toast.error(error.message || "Password update failed", {
-          style: { color: "var(--color-red-400)" },
-        });
-      } else {
-        toast.success("Your password has been updated successfully.");
-        setCurrentPassword("");
-        setNewPassword("");
-        setConfirmPassword("");
-        // 성공 시 잠시 후 다이얼로그 닫기
-        setTimeout(() => {
-          onClose();
-        }, 1500);
-      }
-    } catch (err) {
-      toast.error("An error occurred while updating password", {
+    try {
+      await updatePassword(newPassword);
+
+      toast.success("Your password has been updated successfully.");
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
+      // 성공 시 잠시 후 다이얼로그 닫기
+      setTimeout(() => {
+        onClose();
+      }, 1500);
+    } catch (error: any) {
+      console.error("Password update error:", error);
+      toast.error(error.message || "Password update failed", {
         style: { color: "var(--color-red-400)" },
       });
     } finally {
@@ -142,6 +149,7 @@ export function EditProfileModal({ isOpen, onClose }: EditProfileModalProps) {
     setCurrentPassword("");
     setNewPassword("");
     setConfirmPassword("");
+    setShowCurrentPassword(false);
     setShowNewPassword(false);
     setShowConfirmPassword(false);
     onClose();
@@ -174,9 +182,6 @@ export function EditProfileModal({ isOpen, onClose }: EditProfileModalProps) {
                   disabled
                   className="bg-muted"
                 />
-                <p className="text-xs text-muted-foreground">
-                  Email cannot be changed
-                </p>
               </div>
 
               <div className="space-y-2">
@@ -189,6 +194,20 @@ export function EditProfileModal({ isOpen, onClose }: EditProfileModalProps) {
                   placeholder="Enter your full name"
                   disabled={profileLoading}
                 />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="role">Role</Label>
+                <Input
+                  id="role"
+                  type="text"
+                  value={user?.user_metadata?.job_title || "Not assigned"}
+                  disabled
+                  className="bg-muted"
+                />
+                <p className="text-xs text-muted-foreground">
+                  Role is managed by administrators
+                </p>
               </div>
 
               <Button
@@ -208,6 +227,33 @@ export function EditProfileModal({ isOpen, onClose }: EditProfileModalProps) {
 
           <TabsContent value="security" className="space-y-4">
             <form onSubmit={handlePasswordChange} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="currentPassword">Current Password</Label>
+                <div className="relative">
+                  <Input
+                    id="currentPassword"
+                    type={showCurrentPassword ? "text" : "password"}
+                    value={currentPassword}
+                    onChange={(e) => setCurrentPassword(e.target.value)}
+                    placeholder="Enter current password"
+                    disabled={passwordLoading}
+                    className="pr-10"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowCurrentPassword(!showCurrentPassword)}
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                    disabled={passwordLoading}
+                  >
+                    {showCurrentPassword ? (
+                      <EyeOff className="h-4 w-4" />
+                    ) : (
+                      <Eye className="h-4 w-4" />
+                    )}
+                  </button>
+                </div>
+              </div>
+
               <div className="space-y-2">
                 <Label htmlFor="newPassword">New Password</Label>
                 <div className="relative">
@@ -267,7 +313,12 @@ export function EditProfileModal({ isOpen, onClose }: EditProfileModalProps) {
 
               <Button
                 type="submit"
-                disabled={passwordLoading || !newPassword || !confirmPassword}
+                disabled={
+                  passwordLoading ||
+                  !currentPassword ||
+                  !newPassword ||
+                  !confirmPassword
+                }
                 className="w-full"
               >
                 {passwordLoading ? "Updating..." : "Update Password"}

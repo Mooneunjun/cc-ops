@@ -12,6 +12,7 @@ export type User = {
   user_metadata?: {
     full_name?: string;
     avatar_url?: string;
+    job_title?: string;
   };
 };
 
