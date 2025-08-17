@@ -28,14 +28,13 @@ const VALID_ROUTES = [
   "docs/changelog",
 ];
 
-interface CatchAllPageProps {
-  params: {
-    catchall: string[];
-  };
-}
-
-export default function CatchAllPage({ params }: CatchAllPageProps) {
-  const requestedPath = params.catchall.join("/");
+export default async function CatchAllPage({
+  params,
+}: {
+  params: Promise<{ catchall: string[] }>;
+}) {
+  const { catchall } = await params;
+  const requestedPath = catchall.join("/");
 
   // 모든 무효한 라우트에 대해 커스텀 404 페이지를 정상 페이지로 렌더링
   return (
