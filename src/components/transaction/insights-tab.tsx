@@ -16,12 +16,19 @@ import {
   SelectTrigger,
 } from "@/components/ui/select";
 import {
+  ContextMenu,
+  ContextMenuContent,
+  ContextMenuItem,
+  ContextMenuTrigger,
+} from "@/components/ui/context-menu";
+import {
   getCellId,
   formatDateForCalendar,
   formatDateTime,
   formatAmount,
 } from "./transaction-utils";
 import { getCurrencyBySendingCountry } from "./transaction-utils";
+import { RecipientPivot } from "./recipient-pivot";
 
 type StatisticType = "sum" | "avg" | "max" | "min" | "count";
 
@@ -48,6 +55,66 @@ export function InsightsTab({ filteredData }: InsightsTabProps) {
     month: number;
   } | null>(null);
   const [statisticType, setStatisticType] = useState<StatisticType>("sum");
+  const [activeContextCell, setActiveContextCell] = useState<string | null>(null);
+
+  // 선택된 셀들의 합계 복사 함수
+  const copySelectedCellsAmount = async () => {
+    const completed = filteredData.filter((t: any) => t.status === "지급완료");
+    const yearsList = completed
+      .map((t: any) => {
+        const d = new Date(t.finished);
+        return isNaN(d.getTime()) ? null : d.getFullYear();
+      })
+      .filter((y: number | null): y is number => y !== null);
+    const years: number[] = Array.from(new Set<number>(yearsList)).sort(
+      (a, b) => a - b
+    );
+    const pivot: Record<
+      number,
+      Record<number, { count: number; amount: number }>
+    > = {};
+    for (const y of years) {
+      pivot[y] = {} as Record<number, { count: number; amount: number }>;
+      for (let m = 1; m <= 12; m++) pivot[y][m] = { count: 0, amount: 0 };
+    }
+    completed.forEach((t: any) => {
+      const d = new Date(t.finished);
+      if (isNaN(d.getTime())) return;
+      const y = d.getFullYear();
+      const m = d.getMonth() + 1;
+      const a = Number(t.localSourceAmt ?? t.sourceAmt) || 0;
+      if (pivot[y] && pivot[y][m]) {
+        pivot[y][m].count += 1;
+        pivot[y][m].amount += a;
+      }
+    });
+
+    const amounts: number[] = [];
+    selectedCells.forEach((id) => {
+      const [ys, ms] = id.split("-");
+      const y = parseInt(ys);
+      const m = parseInt(ms);
+      if (pivot[y] && pivot[y][m]) {
+        const { amount } = pivot[y][m];
+        if (amount > 0) amounts.push(amount);
+      }
+    });
+
+    const totalAmount = amounts.reduce((s, v) => s + v, 0);
+    const formattedAmount = totalAmount.toLocaleString("ko-KR");
+    
+    try {
+      await navigator.clipboard.writeText(formattedAmount);
+    } catch (err) {
+      // fallback for older browsers
+      const textArea = document.createElement("textarea");
+      textArea.value = formattedAmount;
+      document.body.appendChild(textArea);
+      textArea.select();
+      document.execCommand("copy");
+      document.body.removeChild(textArea);
+    }
+  };
 
   const handleCellClick = (
     year: number,
@@ -226,10 +293,6 @@ export function InsightsTab({ filteredData }: InsightsTabProps) {
                       {statisticType === "count"
                         ? calculateStatistic
                         : formatAmount(calculateStatistic)}
-                      {statisticType !== "count" &&
-                        ` ${getCurrencyBySendingCountry(
-                          filteredData.find((t: any) => t.send)?.send
-                        )}`}
                     </span>
                   </div>
                 </SelectTrigger>
@@ -281,7 +344,7 @@ export function InsightsTab({ filteredData }: InsightsTabProps) {
                     </TableHead>
                   ));
                 })()}
-                <TableHead className="text-center bg-muted h-12 w-24">
+                <TableHead className="text-center h-12 w-24 bg-slate-50">
                   <div className="space-y-1">
                     <div>총계</div>
                   </div>
@@ -366,19 +429,20 @@ export function InsightsTab({ filteredData }: InsightsTabProps) {
                           );
                         })();
                         return (
-                          <TableCell
-                            key={m}
-                            className={`relative text-center w-20 border-r border-dashed border-gray-300 cursor-pointer transition-colors hover:bg-gray-100 ${
-                              isSelected ? "bg-blue-100 hover:bg-blue-200" : ""
-                            }`}
-                            onClick={(e) => handleCellClick(y as number, m, e)}
-                            onMouseDown={(e) =>
-                              handleCellMouseDown(y as number, m, e)
-                            }
-                            onMouseEnter={() =>
-                              handleCellMouseEnter(y as number, m)
-                            }
-                          >
+                          <ContextMenu key={m}>
+                            <ContextMenuTrigger asChild>
+                              <TableCell
+                                className={`relative text-center w-20 border-r border-dashed border-gray-300 cursor-pointer transition-colors hover:bg-gray-100 ${
+                                  isSelected ? "bg-blue-100 hover:bg-blue-200" : ""
+                                }`}
+                                onClick={(e) => handleCellClick(y as number, m, e)}
+                                onMouseDown={(e) =>
+                                  handleCellMouseDown(y as number, m, e)
+                                }
+                                onMouseEnter={() =>
+                                  handleCellMouseEnter(y as number, m)
+                                }
+                              >
                             {/* Selection outer border (final selection) */}
                             {isSelected &&
                               (!isDragging || !inDragRect) &&
@@ -472,23 +536,69 @@ export function InsightsTab({ filteredData }: InsightsTabProps) {
                                 </div>
                               );
                             })()}
-                          </TableCell>
+                              </TableCell>
+                            </ContextMenuTrigger>
+                            <ContextMenuContent>
+                              <ContextMenuItem
+                                onClick={copySelectedCellsAmount}
+                                disabled={selectedCells.size === 0}
+                              >
+                                복사
+                              </ContextMenuItem>
+                            </ContextMenuContent>
+                          </ContextMenu>
                         );
                       })}
-                      <TableCell className="text-center bg-muted w-24">
-                        {yearTotal.count === 0 && yearTotal.amount === 0 ? (
-                          <div className="text-sm text-center text-muted-foreground">
-                            -
-                          </div>
-                        ) : (
-                          <div className="text-xs">
-                            <div className="text-[11px] text-muted-foreground">
-                              {yearTotal.count}
-                            </div>
-                            <div>{formatAmount(yearTotal.amount)}</div>
-                          </div>
-                        )}
-                      </TableCell>
+                      <ContextMenu
+                        onOpenChange={(open) => {
+                          if (open) {
+                            setActiveContextCell(`year-${y}-total`);
+                          } else {
+                            setActiveContextCell(null);
+                          }
+                        }}
+                      >
+                        <ContextMenuTrigger asChild>
+                          <TableCell 
+                            className={`text-center w-24 cursor-pointer transition-colors ${
+                              activeContextCell === `year-${y}-total` ? "bg-green-100" : ""
+                            }`}
+                          >
+                            {yearTotal.count === 0 && yearTotal.amount === 0 ? (
+                              <div className="text-sm text-center text-muted-foreground">
+                                -
+                              </div>
+                            ) : (
+                              <div className="text-xs">
+                                <div className="text-[11px] text-muted-foreground">
+                                  {yearTotal.count}
+                                </div>
+                                <div>{formatAmount(yearTotal.amount)}</div>
+                              </div>
+                            )}
+                          </TableCell>
+                        </ContextMenuTrigger>
+                        <ContextMenuContent>
+                          <ContextMenuItem
+                            onClick={() => {
+                              if (yearTotal.amount > 0) {
+                                const formattedAmount = yearTotal.amount.toLocaleString("ko-KR");
+                                navigator.clipboard.writeText(formattedAmount).catch(() => {
+                                  const textArea = document.createElement("textarea");
+                                  textArea.value = formattedAmount;
+                                  document.body.appendChild(textArea);
+                                  textArea.select();
+                                  document.execCommand("copy");
+                                  document.body.removeChild(textArea);
+                                });
+                              }
+                            }}
+                            disabled={yearTotal.amount === 0}
+                          >
+                            복사
+                          </ContextMenuItem>
+                        </ContextMenuContent>
+                      </ContextMenu>
                     </TableRow>
                   );
                 });
@@ -530,40 +640,110 @@ export function InsightsTab({ filteredData }: InsightsTabProps) {
                   return (
                     <>
                       {monthTotals.map((mt) => (
-                        <TableCell
+                        <ContextMenu 
                           key={mt.month}
-                          className="text-center w-20 border-r border-dashed border-gray-300"
+                          onOpenChange={(open) => {
+                            if (open) {
+                              setActiveContextCell(`month-${mt.month}`);
+                            } else {
+                              setActiveContextCell(null);
+                            }
+                          }}
                         >
-                          {mt.count === 0 && mt.amount === 0 ? (
-                            <div className="text-sm text-center text-muted-foreground">
-                              -
-                            </div>
-                          ) : (
-                            <div className="text-xs">
-                              <div className="text-[11px] text-muted-foreground font-normal">
-                                {mt.count > 0 ? mt.count : "-"}
-                              </div>
-                              <div>
-                                {mt.amount > 0 ? formatAmount(mt.amount) : "-"}
-                              </div>
-                            </div>
-                          )}
-                        </TableCell>
+                          <ContextMenuTrigger asChild>
+                            <TableCell
+                              className={`text-center w-20 border-r border-dashed border-gray-300 cursor-pointer transition-colors ${
+                                activeContextCell === `month-${mt.month}` ? "bg-green-100" : ""
+                              }`}
+                            >
+                              {mt.count === 0 && mt.amount === 0 ? (
+                                <div className="text-sm text-center text-muted-foreground">
+                                  -
+                                </div>
+                              ) : (
+                                <div className="text-xs">
+                                  <div className="text-[11px] text-muted-foreground font-normal">
+                                    {mt.count > 0 ? mt.count : "-"}
+                                  </div>
+                                  <div>
+                                    {mt.amount > 0 ? formatAmount(mt.amount) : "-"}
+                                  </div>
+                                </div>
+                              )}
+                            </TableCell>
+                          </ContextMenuTrigger>
+                          <ContextMenuContent>
+                            <ContextMenuItem
+                              onClick={() => {
+                                if (mt.amount > 0) {
+                                  const formattedAmount = mt.amount.toLocaleString("ko-KR");
+                                  navigator.clipboard.writeText(formattedAmount).catch(() => {
+                                    const textArea = document.createElement("textarea");
+                                    textArea.value = formattedAmount;
+                                    document.body.appendChild(textArea);
+                                    textArea.select();
+                                    document.execCommand("copy");
+                                    document.body.removeChild(textArea);
+                                  });
+                                }
+                              }}
+                              disabled={mt.amount === 0}
+                            >
+                              복사
+                            </ContextMenuItem>
+                          </ContextMenuContent>
+                        </ContextMenu>
                       ))}
-                      <TableCell className="text-center bg-primary/10 w-24">
-                        {grand.count === 0 && grand.amount === 0 ? (
-                          <div className="text-sm text-center text-muted-foreground">
-                            -
-                          </div>
-                        ) : (
-                          <div className="text-xs">
-                            <div className="text-[11px] text-muted-foreground font-normal">
-                              {grand.count}
-                            </div>
-                            <div>{formatAmount(grand.amount)}</div>
-                          </div>
-                        )}
-                      </TableCell>
+                      <ContextMenu
+                        onOpenChange={(open) => {
+                          if (open) {
+                            setActiveContextCell("grand-total");
+                          } else {
+                            setActiveContextCell(null);
+                          }
+                        }}
+                      >
+                        <ContextMenuTrigger asChild>
+                          <TableCell 
+                            className={`text-center w-24 cursor-pointer transition-colors ${
+                              activeContextCell === "grand-total" ? "bg-green-100" : ""
+                            }`}
+                          >
+                            {grand.count === 0 && grand.amount === 0 ? (
+                              <div className="text-sm text-center text-muted-foreground">
+                                -
+                              </div>
+                            ) : (
+                              <div className="text-xs">
+                                <div className="text-[11px] text-muted-foreground font-normal">
+                                  {grand.count}
+                                </div>
+                                <div>{formatAmount(grand.amount)}</div>
+                              </div>
+                            )}
+                          </TableCell>
+                        </ContextMenuTrigger>
+                        <ContextMenuContent>
+                          <ContextMenuItem
+                            onClick={() => {
+                              if (grand.amount > 0) {
+                                const formattedAmount = grand.amount.toLocaleString("ko-KR");
+                                navigator.clipboard.writeText(formattedAmount).catch(() => {
+                                  const textArea = document.createElement("textarea");
+                                  textArea.value = formattedAmount;
+                                  document.body.appendChild(textArea);
+                                  textArea.select();
+                                  document.execCommand("copy");
+                                  document.body.removeChild(textArea);
+                                });
+                              }
+                            }}
+                            disabled={grand.amount === 0}
+                          >
+                            복사
+                          </ContextMenuItem>
+                        </ContextMenuContent>
+                      </ContextMenu>
                     </>
                   );
                 })()}
@@ -572,6 +752,8 @@ export function InsightsTab({ filteredData }: InsightsTabProps) {
           </Table>
         </div>
       </div>
+      {/* 수취인별 송금량 표 */}
+      <RecipientPivot filteredData={filteredData} />
     </div>
   );
 }
