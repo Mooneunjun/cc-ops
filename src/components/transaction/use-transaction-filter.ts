@@ -25,7 +25,7 @@ export function useTransactionFilter(
 
   const filteredData = useMemo(() => {
     let filtered = data || [];
-    
+
     // 검색어 필터
     if (searchTerm) {
       filtered = filtered.filter(
@@ -36,31 +36,31 @@ export function useTransactionFilter(
           row.receive?.toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
-    
+
     // 송금상태 필터
     if (selectedStatuses.length > 0) {
       filtered = filtered.filter((row: any) =>
         selectedStatuses.includes(row.status)
       );
     }
-    
+
     // 수취인 필터
     if (selectedRecipients.length > 0) {
       filtered = filtered.filter((row: any) =>
         selectedRecipients.includes(row.reciFullName)
       );
     }
-    
+
     // 금액 범위 필터
     if (minAmount || maxAmount) {
       filtered = filtered.filter((row: any) => {
-        const amount = Number(row.sourceAmt) || 0;
+        const amount = Number(row.localSourceAmt ?? row.sourceAmt) || 0;
         const min = minAmount ? Number(minAmount) : 0;
         const max = maxAmount ? Number(maxAmount) : Infinity;
         return amount >= min && amount <= max;
       });
     }
-    
+
     // 날짜 범위 필터
     if (dateRange?.from || dateRange?.to) {
       filtered = filtered.filter((row: any) => {
@@ -70,7 +70,7 @@ export function useTransactionFilter(
         return appliedDate >= start && appliedDate <= end;
       });
     }
-    
+
     return filtered;
   }, [
     data,

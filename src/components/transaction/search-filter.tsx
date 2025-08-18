@@ -9,7 +9,11 @@ interface SearchFilterProps {
   onClearFilters: () => void;
 }
 
-export function SearchFilter({ searchTerm, onSearchChange, onClearFilters }: SearchFilterProps) {
+export function SearchFilter({
+  searchTerm,
+  onSearchChange,
+  onClearFilters,
+}: SearchFilterProps) {
   return (
     <div className="space-y-2">
       <div className="flex justify-between items-center">

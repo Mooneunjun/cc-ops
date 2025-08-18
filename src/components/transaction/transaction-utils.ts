@@ -9,6 +9,26 @@ export const formatAmount = (amount: string | number) => {
   return Number(amount).toLocaleString("ko-KR");
 };
 
+// 송금 당발 국가 코드를 통화 코드로 매핑
+export const getCurrencyBySendingCountry = (sendCountry?: string) => {
+  switch ((sendCountry || "").toUpperCase()) {
+    case "KR":
+      return "KRW";
+    case "AU":
+      return "AUD";
+    case "NZ":
+      return "NZD";
+    case "HK":
+      return "HKD";
+    case "US":
+      return "USD";
+    case "CA":
+      return "CAD";
+    default:
+      return "KRW";
+  }
+};
+
 // 날짜/시간 포맷팅 유틸리티
 export const formatDateTime = (dateTime: string) => {
   try {
@@ -26,8 +46,9 @@ export const formatDateForCalendar = (date: Date) => {
 
 // 상태 배지 클래스 유틸리티
 export const getStatusBadgeClass = (status: string) => {
-  const baseClasses = "inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium";
-  
+  const baseClasses =
+    "inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium";
+
   switch (status) {
     case "지급완료":
       return `${baseClasses} bg-green-100 text-green-800`;
