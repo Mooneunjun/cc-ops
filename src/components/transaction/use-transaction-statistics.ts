@@ -46,7 +46,8 @@ export function useTransactionStatistics(
 
       const year = date.getFullYear();
       const month = date.getMonth() + 1;
-      const amount = Number(transaction.sourceAmt) || 0;
+      const amount =
+        Number(transaction.localSourceAmt ?? transaction.sourceAmt) || 0;
 
       if (pivotData[year] && pivotData[year][month]) {
         pivotData[year][month].count += 1;
@@ -121,7 +122,8 @@ export function useTransactionStatistics(
 
       const year = date.getFullYear();
       const month = date.getMonth() + 1;
-      const amount = Number(transaction.sourceAmt) || 0;
+      const amount =
+        Number(transaction.localSourceAmt ?? transaction.sourceAmt) || 0;
 
       if (data[year] && data[year][month]) {
         data[year][month].count += 1;
@@ -135,6 +137,8 @@ export function useTransactionStatistics(
   return {
     calculateStatistic,
     pivotData,
-    years: Object.keys(pivotData).map(Number).sort((a, b) => a - b),
+    years: Object.keys(pivotData)
+      .map(Number)
+      .sort((a, b) => a - b),
   };
 }

@@ -56,6 +56,9 @@ import { TransactionDetailModal } from "./transaction-detail-modal";
 import { ChartsTab } from "./charts-tab";
 import { StatusBadge } from "./status-badge";
 import { SearchFilter } from "./search-filter";
+import { TransactionFilters } from "./transaction-filters";
+import { getCurrencyBySendingCountry } from "./transaction-utils";
+import { InsightsTab } from "./insights-tab";
 interface TransactionTableProps {
   data: any;
 }
@@ -84,6 +87,17 @@ export function TransactionTable({ data }: TransactionTableProps) {
     year: number;
     month: number;
   } | null>(null);
+  const [baseSelectedCells, setBaseSelectedCells] =
+    useState<Set<string> | null>(null);
+  const [isAdditiveDrag, setIsAdditiveDrag] = useState(false);
+  const [didDrag, setDidDrag] = useState(false);
+  const [additiveMode, setAdditiveMode] = useState<"none" | "add" | "remove">(
+    "none"
+  );
+  const [dragCurrent, setDragCurrent] = useState<{
+    year: number;
+    month: number;
+  } | null>(null);
   const [statisticType, setStatisticType] = useState<
     "sum" | "avg" | "max" | "min" | "count"
   >("sum");
@@ -97,6 +111,11 @@ export function TransactionTable({ data }: TransactionTableProps) {
     event: React.MouseEvent
   ) => {
     event.preventDefault();
+    // If a drag gesture just finished, ignore the click to prevent unwanted toggle
+    if (didDrag) {
+      setDidDrag(false);
+      return;
+    }
     const cellId = getCellId(year, month);
     const newSelectedCells = new Set(selectedCells);
 
@@ -121,37 +140,85 @@ export function TransactionTable({ data }: TransactionTableProps) {
     month: number,
     event: React.MouseEvent
   ) => {
-    if (event.ctrlKey || event.metaKey) return;
+    const additive = event.ctrlKey || event.metaKey;
 
     setIsDragging(true);
+    setIsAdditiveDrag(additive);
     setDragStart({ year, month });
-    const cellId = getCellId(year, month);
-    const newSelectedCells = new Set<string>();
-    newSelectedCells.add(cellId);
-    setSelectedCells(newSelectedCells);
+    setDidDrag(false);
+
+    if (additive) {
+      // Defer selection changes until the pointer moves; keep a snapshot
+      const startCellId = getCellId(year, month);
+      setBaseSelectedCells(new Set(selectedCells));
+      setAdditiveMode(selectedCells.has(startCellId) ? "remove" : "add");
+    } else {
+      // Replace selection with starting cell immediately for normal drag
+      setBaseSelectedCells(null);
+      const newSelected = new Set<string>();
+      newSelected.add(getCellId(year, month));
+      setSelectedCells(newSelected);
+      setAdditiveMode("none");
+    }
   };
 
   const handleCellMouseEnter = (year: number, month: number) => {
     if (!isDragging || !dragStart) return;
 
-    const newSelectedCells = new Set<string>();
     const startYear = Math.min(dragStart.year, year);
     const endYear = Math.max(dragStart.year, year);
     const startMonth = Math.min(dragStart.month, month);
     const endMonth = Math.max(dragStart.month, month);
 
+    const rectCells: string[] = [];
     for (let y = startYear; y <= endYear; y++) {
       for (let m = startMonth; m <= endMonth; m++) {
-        newSelectedCells.add(getCellId(y, m));
+        rectCells.push(getCellId(y, m));
       }
     }
 
-    setSelectedCells(newSelectedCells);
+    let nextSelection: Set<string>;
+    if (isAdditiveDrag && baseSelectedCells) {
+      nextSelection = new Set(baseSelectedCells);
+      if (additiveMode === "add") {
+        // Union: include all cells in rectangle
+        for (const cell of rectCells) {
+          nextSelection.add(cell);
+        }
+      } else if (additiveMode === "remove") {
+        // Subtract: remove cells in rectangle from selection
+        for (const cell of rectCells) {
+          nextSelection.delete(cell);
+        }
+      } else {
+        // Fallback (should not happen): behave like union
+        for (const cell of rectCells) {
+          nextSelection.add(cell);
+        }
+      }
+    } else {
+      // Replace selection with rectangle
+      nextSelection = new Set<string>(rectCells);
+    }
+
+    // Mark that an actual drag occurred if we moved beyond the origin cell
+    if (year !== dragStart.year || month !== dragStart.month) {
+      setDidDrag(true);
+    }
+
+    // Track current drag cursor for visual preview
+    setDragCurrent({ year, month });
+
+    setSelectedCells(nextSelection);
   };
 
   const handleMouseUp = () => {
     setIsDragging(false);
+    setIsAdditiveDrag(false);
     setDragStart(null);
+    setBaseSelectedCells(null);
+    setAdditiveMode("none");
+    setDragCurrent(null);
   };
 
   const handleViewDetails = (transaction: any) => {
@@ -174,18 +241,21 @@ export function TransactionTable({ data }: TransactionTableProps) {
     return `${year}/${month}/${day} ${hours}:${minutes}:${seconds}`;
   };
   // 고유한 송금상태 목록 추출
-  const uniqueStatuses = useMemo(() => {
-    const statuses =
-      data.rows?.map((row: any) => row.status).filter(Boolean) || [];
-    return [...new Set(statuses)];
+  const uniqueStatuses: string[] = useMemo<string[]>(() => {
+    const statuses = (data.rows?.map((row: any) => row.status) ?? []).filter(
+      (s: unknown): s is string => typeof s === "string" && s.length > 0
+    );
+    return Array.from(new Set(statuses));
   }, [data]);
   // 고유한 수취인 목록 추출 (빈값 제외)
-  const uniqueRecipients = useMemo(() => {
-    const recipients =
-      data.rows
-        ?.map((row: any) => row.reciFullName)
-        .filter((name: any) => name && name.trim() !== "") || [];
-    return [...new Set(recipients)];
+  const uniqueRecipients: string[] = useMemo<string[]>(() => {
+    const recipients = (
+      data.rows?.map((row: any) => row.reciFullName) ?? []
+    ).filter(
+      (name: unknown): name is string =>
+        typeof name === "string" && name.trim() !== ""
+    );
+    return Array.from(new Set(recipients));
   }, [data]);
   // 송금상태 체크박스 핸들러
   const handleStatusChange = (status: string, checked: boolean) => {
@@ -243,7 +313,7 @@ export function TransactionTable({ data }: TransactionTableProps) {
     // 금액 범위 필터
     if (minAmount || maxAmount) {
       filtered = filtered.filter((row: any) => {
-        const amount = Number(row.sourceAmt) || 0;
+        const amount = Number(row.localSourceAmt ?? row.sourceAmt) || 0;
         const min = minAmount ? Number(minAmount) : 0;
         const max = maxAmount ? Number(maxAmount) : Infinity;
         return amount >= min && amount <= max;
@@ -303,7 +373,7 @@ export function TransactionTable({ data }: TransactionTableProps) {
       Record<number, { count: number; amount: number }>
     > = {};
     for (const year of years) {
-      pivotData[year] = {};
+      pivotData[year] = {} as Record<number, { count: number; amount: number }>;
       for (let month = 1; month <= 12; month++) {
         pivotData[year][month] = { count: 0, amount: 0 };
       }
@@ -315,7 +385,8 @@ export function TransactionTable({ data }: TransactionTableProps) {
 
       const year = date.getFullYear();
       const month = date.getMonth() + 1;
-      const amount = Number(transaction.sourceAmt) || 0;
+      const amount =
+        Number(transaction.localSourceAmt ?? transaction.sourceAmt) || 0;
 
       if (pivotData[year] && pivotData[year][month]) {
         pivotData[year][month].count += 1;
@@ -323,37 +394,40 @@ export function TransactionTable({ data }: TransactionTableProps) {
       }
     });
 
-    const selectedValues: number[] = [];
+    const selectedCounts: number[] = [];
+    const selectedAmounts: number[] = [];
     selectedCells.forEach((cellId) => {
       const [yearStr, monthStr] = cellId.split("-");
       const year = parseInt(yearStr);
       const month = parseInt(monthStr);
 
       if (pivotData[year] && pivotData[year][month]) {
-        if (statisticType === "count") {
-          selectedValues.push(pivotData[year][month].count);
-        } else {
-          selectedValues.push(pivotData[year][month].amount);
+        const { count, amount } = pivotData[year][month];
+        selectedCounts.push(count);
+        if (amount > 0) {
+          selectedAmounts.push(amount);
         }
       }
     });
 
-    if (selectedValues.length === 0) return 0;
+    if (statisticType === "count") {
+      return selectedCounts.reduce((sum, c) => sum + c, 0);
+    }
+
+    if (selectedAmounts.length === 0) return 0;
 
     switch (statisticType) {
       case "sum":
-        return selectedValues.reduce((sum, val) => sum + val, 0);
+        return selectedAmounts.reduce((sum, val) => sum + val, 0);
       case "avg":
-        return (
-          selectedValues.reduce((sum, val) => sum + val, 0) /
-          selectedValues.length
+        return Math.round(
+          selectedAmounts.reduce((sum, val) => sum + val, 0) /
+            selectedAmounts.length
         );
       case "max":
-        return Math.max(...selectedValues);
+        return Math.max(...selectedAmounts);
       case "min":
-        return Math.min(...selectedValues);
-      case "count":
-        return selectedValues.length;
+        return Math.min(...selectedAmounts);
       default:
         return 0;
     }
@@ -372,7 +446,7 @@ export function TransactionTable({ data }: TransactionTableProps) {
       return `calc(100vw - 2rem)`;
     }
     // 데스크톱에서의 사이드바 너비 계산
-    const sidebarWidth = state === "expanded" ? "16rem" : "0rem";
+    const sidebarWidth = state === "expanded" ? "18rem" : "0rem";
     return `calc(100vw - ${sidebarWidth} - 2rem)`;
   };
   return (
@@ -380,154 +454,35 @@ export function TransactionTable({ data }: TransactionTableProps) {
       {/* 필터 섹션 */}
       <Card>
         <CardContent className="space-y-6">
-          {/* 검색 */}
-          <SearchFilter
+          <TransactionFilters
             searchTerm={searchTerm}
             onSearchChange={(value) => {
               setSearchTerm(value);
-              setCurrentPage(1); // 검색 시 첫 페이지로
+              setCurrentPage(1);
             }}
             onClearFilters={clearFilters}
+            uniqueStatuses={uniqueStatuses}
+            selectedStatuses={selectedStatuses}
+            onStatusToggle={handleStatusChange}
+            uniqueRecipients={uniqueRecipients}
+            selectedRecipients={selectedRecipients}
+            onRecipientToggle={handleRecipientChange}
+            minAmount={minAmount}
+            maxAmount={maxAmount}
+            onMinAmountChange={(v) => {
+              setMinAmount(v);
+              setCurrentPage(1);
+            }}
+            onMaxAmountChange={(v) => {
+              setMaxAmount(v);
+              setCurrentPage(1);
+            }}
+            dateRange={dateRange}
+            onDateRangeChange={(range) => {
+              setDateRange(range);
+              setCurrentPage(1);
+            }}
           />
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            {/* 송금상태 필터 */}
-            <div className="space-y-2">
-              <Label>송금상태</Label>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="outline" className="w-full justify-between">
-                    {selectedStatuses.length > 0
-                      ? `${selectedStatuses.length}개 선택됨`
-                      : "상태 선택"}
-                    <ChevronDown className="h-4 w-4" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent
-                  align="start"
-                  className="w-full"
-                  style={{
-                    width: "var(--radix-dropdown-menu-trigger-width, 240px)",
-                  }}
-                >
-                  <DropdownMenuLabel>송금상태</DropdownMenuLabel>
-                  {uniqueStatuses.map((status) => (
-                    <DropdownMenuCheckboxItem
-                      key={status as string}
-                      checked={selectedStatuses.includes(status as string)}
-                      onCheckedChange={(checked) =>
-                        handleStatusChange(status as string, checked)
-                      }
-                      className="relative flex w-full cursor-default items-center rounded-sm py-1.5 pl-2 pr-8 text-sm outline-none select-none data-[disabled]:pointer-events-none data-[disabled]:opacity-50 focus:bg-accent focus:text-accent-foreground [&>span]:!left-auto [&>span]:!right-2"
-                    >
-                      <StatusBadge status={status as string} />
-                    </DropdownMenuCheckboxItem>
-                  ))}
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </div>
-            {/* 수취인 필터 */}
-            <div className="space-y-2">
-              <Label>수취인</Label>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="outline" className="w-full justify-between">
-                    {selectedRecipients.length > 0
-                      ? `${selectedRecipients.length}명 선택됨`
-                      : "수취인 선택"}
-                    <ChevronDown className="h-4 w-4" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent
-                  align="start"
-                  className="w-full max-h-64 overflow-y-auto"
-                  style={{
-                    width: "var(--radix-dropdown-menu-trigger-width, 240px)",
-                  }}
-                >
-                  <DropdownMenuLabel>수취인</DropdownMenuLabel>
-                  {uniqueRecipients.map((recipient) => (
-                    <DropdownMenuCheckboxItem
-                      key={recipient as string}
-                      checked={selectedRecipients.includes(recipient as string)}
-                      onCheckedChange={(checked) =>
-                        handleRecipientChange(recipient as string, checked)
-                      }
-                      className="relative flex w-full cursor-default items-center rounded-sm py-1.5 pl-2 pr-8 text-sm outline-none select-none data-[disabled]:pointer-events-none data-[disabled]:opacity-50 focus:bg-accent focus:text-accent-foreground [&>span]:!left-auto [&>span]:!right-2"
-                    >
-                      {recipient as string}
-                    </DropdownMenuCheckboxItem>
-                  ))}
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </div>
-            {/* 금액 범위 */}
-            <div className="space-y-2">
-              <Label>금액 범위</Label>
-              <div className="flex gap-2">
-                <Input
-                  type="number"
-                  placeholder="최소"
-                  value={minAmount}
-                  onChange={(e) => {
-                    setMinAmount(e.target.value);
-                    setCurrentPage(1);
-                  }}
-                />
-                <span className="flex items-center">~</span>
-                <Input
-                  type="number"
-                  placeholder="최대"
-                  value={maxAmount}
-                  onChange={(e) => {
-                    setMaxAmount(e.target.value);
-                    setCurrentPage(1);
-                  }}
-                />
-              </div>
-            </div>
-            {/* 날짜 범위 */}
-            <div className="space-y-2">
-              <Label>날짜 범위</Label>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    id="date"
-                    variant="outline"
-                    className="w-full justify-start text-left font-normal"
-                  >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {dateRange?.from ? (
-                      dateRange.to ? (
-                        <>
-                          {format(dateRange.from, "yyyy/MM/dd", { locale: ko })}{" "}
-                          - {format(dateRange.to, "yyyy/MM/dd", { locale: ko })}
-                        </>
-                      ) : (
-                        format(dateRange.from, "yyyy/MM/dd", { locale: ko })
-                      )
-                    ) : (
-                      <span>날짜 범위 선택</span>
-                    )}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar
-                    initialFocus
-                    mode="range"
-                    defaultMonth={dateRange?.from}
-                    selected={dateRange}
-                    onSelect={(range) => {
-                      setDateRange(range);
-                      setCurrentPage(1);
-                    }}
-                    captionLayout="dropdown"
-                    fromYear={2020}
-                    toYear={2030}
-                  />
-                </PopoverContent>
-              </Popover>
-            </div>
-          </div>
         </CardContent>
       </Card>
       {/* 데이터 분석 탭 */}
@@ -598,7 +553,7 @@ export function TransactionTable({ data }: TransactionTableProps) {
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">
-                  총 송금금액
+                  총 로컬 송금금액
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -609,11 +564,16 @@ export function TransactionTable({ data }: TransactionTableProps) {
                         (transaction: any) => transaction.status === "지급완료"
                       )
                       .reduce((sum: number, transaction: any) => {
-                        const amount = Number(transaction.sourceAmt) || 0;
+                        const amount =
+                          Number(
+                            transaction.localSourceAmt ?? transaction.sourceAmt
+                          ) || 0;
                         return sum + amount;
                       }, 0)
                   )}{" "}
-                  {filteredData.find((t: any) => t.source)?.source || "KRW"}
+                  {getCurrencyBySendingCountry(
+                    filteredData.find((t: any) => t.send)?.send
+                  )}
                 </div>
                 <p className="text-xs text-muted-foreground">지급완료 기준</p>
               </CardContent>
@@ -621,7 +581,7 @@ export function TransactionTable({ data }: TransactionTableProps) {
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">
-                  1회 최대 송금금액
+                  1회 최대 로컬 송금금액
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -633,12 +593,14 @@ export function TransactionTable({ data }: TransactionTableProps) {
                     if (completedTransactions.length === 0) return "0";
                     const maxAmount = Math.max(
                       ...completedTransactions.map(
-                        (t: any) => Number(t.sourceAmt) || 0
+                        (t: any) => Number(t.localSourceAmt ?? t.sourceAmt) || 0
                       )
                     );
                     return formatAmount(maxAmount);
                   })()}{" "}
-                  {filteredData.find((t: any) => t.source)?.source || "KRW"}
+                  {getCurrencyBySendingCountry(
+                    filteredData.find((t: any) => t.send)?.send
+                  )}
                 </div>
                 <p className="text-xs text-muted-foreground">지급완료 기준</p>
               </CardContent>
@@ -646,7 +608,7 @@ export function TransactionTable({ data }: TransactionTableProps) {
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">
-                  1건 평균 송금금액
+                  1건 평균 로컬 송금금액
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -658,7 +620,10 @@ export function TransactionTable({ data }: TransactionTableProps) {
                     if (completedTransactions.length === 0) return "0";
                     const totalAmount = completedTransactions.reduce(
                       (sum: number, transaction: any) => {
-                        const amount = Number(transaction.sourceAmt) || 0;
+                        const amount =
+                          Number(
+                            transaction.localSourceAmt ?? transaction.sourceAmt
+                          ) || 0;
                         return sum + amount;
                       },
                       0
@@ -667,7 +632,9 @@ export function TransactionTable({ data }: TransactionTableProps) {
                       totalAmount / completedTransactions.length;
                     return formatAmount(Math.round(avgAmount));
                   })()}{" "}
-                  {filteredData.find((t: any) => t.source)?.source || "KRW"}
+                  {getCurrencyBySendingCountry(
+                    filteredData.find((t: any) => t.send)?.send
+                  )}
                 </div>
                 <p className="text-xs text-muted-foreground">지급완료 기준</p>
               </CardContent>
@@ -675,7 +642,7 @@ export function TransactionTable({ data }: TransactionTableProps) {
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">
-                  중위 송금금액
+                  중위 로컬 송금금액
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -687,7 +654,9 @@ export function TransactionTable({ data }: TransactionTableProps) {
                     if (completedTransactions.length === 0) return "0";
 
                     const amounts = completedTransactions
-                      .map((t: any) => Number(t.sourceAmt) || 0)
+                      .map(
+                        (t: any) => Number(t.localSourceAmt ?? t.sourceAmt) || 0
+                      )
                       .sort((a: number, b: number) => a - b);
 
                     let median: number;
@@ -703,7 +672,9 @@ export function TransactionTable({ data }: TransactionTableProps) {
 
                     return formatAmount(Math.round(median));
                   })()}{" "}
-                  {filteredData.find((t: any) => t.source)?.source || "KRW"}
+                  {getCurrencyBySendingCountry(
+                    filteredData.find((t: any) => t.send)?.send
+                  )}
                 </div>
                 <p className="text-xs text-muted-foreground">지급완료 기준</p>
               </CardContent>
@@ -711,14 +682,9 @@ export function TransactionTable({ data }: TransactionTableProps) {
           </div>
 
           {/* 테이블 */}
-          <div className="rounded-lg border">
-            <div
-              className="overflow-x-auto"
-              style={{
-                maxWidth: getSidebarAwareMaxWidth(),
-              }}
-            >
-              <Table style={{ minWidth: "800px" }}>
+          <div className="rounded-lg border w-full min-w-0">
+            <div className="overflow-x-auto w-full min-w-0">
+              <Table className="min-w-max whitespace-nowrap">
                 <TableHeader>
                   <TableRow>
                     <TableHead className="text-center">송금번호</TableHead>
@@ -726,10 +692,10 @@ export function TransactionTable({ data }: TransactionTableProps) {
                     <TableHead className="text-center">송금국가</TableHead>
                     <TableHead className="text-center">입금방식</TableHead>
                     <TableHead className="text-center">지급국가</TableHead>
-                    <TableHead className="text-right">송금금액</TableHead>
+                    <TableHead className="text-right">로컬 송금금액</TableHead>
                     <TableHead className="text-center">송금상태</TableHead>
                     <TableHead className="text-right">수취인명</TableHead>
-                    <TableHead className="text-right">지급완료일시</TableHead>
+                    <TableHead className="text-right">지급 완료일시</TableHead>
                     <TableHead className="text-center">액션</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -762,8 +728,10 @@ export function TransactionTable({ data }: TransactionTableProps) {
                           {transaction.receive}
                         </TableCell>
                         <TableCell className="text-right font-medium">
-                          {formatAmount(transaction.sourceAmt)}{" "}
-                          {transaction.source}
+                          {formatAmount(
+                            transaction.localSourceAmt ?? transaction.sourceAmt
+                          )}{" "}
+                          {getCurrencyBySendingCountry(transaction.send)}
                         </TableCell>
                         <TableCell className="text-center">
                           <StatusBadge status={transaction.status} />
@@ -911,291 +879,7 @@ export function TransactionTable({ data }: TransactionTableProps) {
         </TabsContent>
 
         <TabsContent value="insights" className="space-y-4">
-          {/* 피벗테이블 */}
-          <div className="space-y-4">
-            <div className="flex justify-between items-center">
-              <h3 className="text-xl h-10 flex items-center font-semibold">
-                월별/연도별 송금 분석
-              </h3>
-              <div className="flex items-center gap-4">
-                {selectedCells.size > 0 && (
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm text-muted-foreground">
-                      {selectedCells.size}개 셀 선택됨
-                    </span>
-                    <Select
-                      value={statisticType}
-                      onValueChange={(value: any) => setStatisticType(value)}
-                    >
-                      <SelectTrigger className="w-20">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="sum">합</SelectItem>
-                        <SelectItem value="avg">평균</SelectItem>
-                        <SelectItem value="max">최대</SelectItem>
-                        <SelectItem value="min">최소</SelectItem>
-                        <SelectItem value="count">개수</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <div className="text-sm font-medium">
-                      {statisticType === "count"
-                        ? calculateStatistic
-                        : formatAmount(calculateStatistic)}
-                      {statisticType !== "count" &&
-                        filteredData.find((t: any) => t.source)?.source &&
-                        ` ${filteredData.find((t: any) => t.source)?.source}`}
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-            <div
-              className="rounded-md border"
-              onMouseUp={handleMouseUp}
-              onMouseLeave={handleMouseUp}
-            >
-              <Table className="table-fixed w-full [&_tr]:border-b-0 select-none">
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="text-center h-12 w-20 border-r border-dashed border-gray-300 bg-muted">
-                      연도
-                    </TableHead>
-                    {(() => {
-                      const monthNames = [
-                        "1월",
-                        "2월",
-                        "3월",
-                        "4월",
-                        "5월",
-                        "6월",
-                        "7월",
-                        "8월",
-                        "9월",
-                        "10월",
-                        "11월",
-                        "12월",
-                      ];
-                      return monthNames.map((monthName, index) => (
-                        <TableHead
-                          key={index}
-                          className="text-center h-12 w-20 border-r border-dashed border-gray-300 bg-slate-50"
-                        >
-                          {monthName}
-                        </TableHead>
-                      ));
-                    })()}
-                    <TableHead className="text-center bg-muted h-12 w-24">
-                      <div className="space-y-1">
-                        <div>총계</div>
-                        <div className="text-xs font-normal text-muted-foreground">
-                          건수 / 금액
-                        </div>
-                      </div>
-                    </TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {(() => {
-                    const completedTransactions = filteredData.filter(
-                      (transaction: any) => transaction.status === "지급완료"
-                    );
-
-                    // 연도별 데이터 구조화
-                    const yearsList = completedTransactions
-                      .map((t: any) => {
-                        const date = new Date(t.finished);
-                        return isNaN(date.getTime())
-                          ? null
-                          : date.getFullYear();
-                      })
-                      .filter(
-                        (year: number | null): year is number => year !== null
-                      );
-
-                    const years: number[] = Array.from(
-                      new Set<number>(yearsList)
-                    ).sort((a, b) => a - b);
-
-                    // 연도별 월별 데이터 구조화
-                    const pivotData: Record<
-                      number,
-                      Record<number, { count: number; amount: number }>
-                    > = {};
-
-                    for (const year of years) {
-                      pivotData[year] = {};
-                      for (let month = 1; month <= 12; month++) {
-                        pivotData[year][month] = { count: 0, amount: 0 };
-                      }
-                    }
-
-                    // 데이터 집계
-                    completedTransactions.forEach((transaction: any) => {
-                      const date = new Date(transaction.finished);
-                      if (isNaN(date.getTime())) return;
-
-                      const year = date.getFullYear();
-                      const month = date.getMonth() + 1;
-                      const amount = Number(transaction.sourceAmt) || 0;
-
-                      if (pivotData[year] && pivotData[year][month]) {
-                        pivotData[year][month].count += 1;
-                        pivotData[year][month].amount += amount;
-                      }
-                    });
-
-                    return years.map((year: number) => {
-                      const yearData = pivotData[year];
-
-                      // 연도별 총계 계산
-                      const yearTotal = Array.from(
-                        { length: 12 },
-                        (_, i) => i + 1
-                      ).reduce(
-                        (total, month) => {
-                          return {
-                            count: total.count + (yearData[month]?.count || 0),
-                            amount:
-                              total.amount + (yearData[month]?.amount || 0),
-                          };
-                        },
-                        { count: 0, amount: 0 }
-                      );
-
-                      return (
-                        <TableRow key={year.toString()}>
-                          <TableCell className="font-medium bg-muted text-center border-r border-dashed border-gray-300">
-                            {year}년
-                          </TableCell>
-                          {Array.from({ length: 12 }, (_, i) => i + 1).map(
-                            (month) => {
-                              const cellId = getCellId(year as number, month);
-                              const isSelected = selectedCells.has(cellId);
-
-                              return (
-                                <TableCell
-                                  key={month}
-                                  className={`text-center border-r border-dashed border-gray-300 cursor-pointer transition-colors hover:bg-gray-100 ${
-                                    isSelected
-                                      ? "bg-blue-100 hover:bg-blue-200"
-                                      : ""
-                                  }`}
-                                  onClick={(e) =>
-                                    handleCellClick(year as number, month, e)
-                                  }
-                                  onMouseDown={(e) =>
-                                    handleCellMouseDown(
-                                      year as number,
-                                      month,
-                                      e
-                                    )
-                                  }
-                                  onMouseEnter={() =>
-                                    handleCellMouseEnter(year as number, month)
-                                  }
-                                >
-                                  <div className="text-sm">
-                                    <div>{yearData[month]?.count || 0}</div>
-                                    <div className="text-muted-foreground">
-                                      {formatAmount(
-                                        yearData[month]?.amount || 0
-                                      )}
-                                    </div>
-                                  </div>
-                                </TableCell>
-                              );
-                            }
-                          )}
-                          <TableCell className="text-center bg-muted">
-                            <div className="text-sm font-medium">
-                              <div>{yearTotal.count}</div>
-                              <div className="text-muted-foreground">
-                                {formatAmount(yearTotal.amount)}
-                              </div>
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      );
-                    });
-                  })()}
-                  {/* 월별 총계 행 */}
-                  <TableRow className="bg-muted">
-                    <TableCell className="font-bold text-center border-r border-dashed border-gray-300">
-                      총계
-                    </TableCell>
-                    {(() => {
-                      const completedTransactions = filteredData.filter(
-                        (transaction: any) => transaction.status === "지급완료"
-                      );
-
-                      // 월별 총계 계산
-                      const monthTotals = Array.from(
-                        { length: 12 },
-                        (_, i) => i + 1
-                      ).map((month) => {
-                        const monthTransactions = completedTransactions.filter(
-                          (t: any) => {
-                            const date = new Date(t.finished);
-                            return (
-                              !isNaN(date.getTime()) &&
-                              date.getMonth() + 1 === month
-                            );
-                          }
-                        );
-
-                        return {
-                          month,
-                          count: monthTransactions.length,
-                          amount: monthTransactions.reduce(
-                            (sum: number, t: any) =>
-                              sum + (Number(t.sourceAmt) || 0),
-                            0
-                          ),
-                        };
-                      });
-
-                      // 전체 총계 계산
-                      const grandTotal = {
-                        count: completedTransactions.length,
-                        amount: completedTransactions.reduce(
-                          (sum: number, t: any) =>
-                            sum + (Number(t.sourceAmt) || 0),
-                          0
-                        ),
-                      };
-
-                      return (
-                        <>
-                          {monthTotals.map((monthTotal) => (
-                            <TableCell
-                              key={monthTotal.month}
-                              className="text-center border-r border-dashed border-gray-300"
-                            >
-                              <div className="text-sm font-bold">
-                                <div>{monthTotal.count}</div>
-                                <div className="text-muted-foreground">
-                                  {formatAmount(monthTotal.amount)}
-                                </div>
-                              </div>
-                            </TableCell>
-                          ))}
-                          <TableCell className="text-center bg-primary/10">
-                            <div className="text-sm font-bold">
-                              <div>{grandTotal.count}</div>
-                              <div className="text-muted-foreground">
-                                {formatAmount(grandTotal.amount)}
-                              </div>
-                            </div>
-                          </TableCell>
-                        </>
-                      );
-                    })()}
-                  </TableRow>
-                </TableBody>
-              </Table>
-            </div>
-          </div>
+          <InsightsTab filteredData={filteredData} />
         </TabsContent>
       </Tabs>
       <TransactionDetailModal

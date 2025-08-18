@@ -10,9 +10,7 @@ export function StatisticsCards({ filteredData }: StatisticsCardsProps) {
     <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-5 gap-4">
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">
-            지급완료 기간
-          </CardTitle>
+          <CardTitle className="text-sm font-medium">지급완료 기간</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="text-lg font-bold">
@@ -35,7 +33,9 @@ export function StatisticsCards({ filteredData }: StatisticsCardsProps) {
               };
               return dates.length === 1
                 ? formatDate(dates[0])
-                : `${formatDate(dates[0])} ~ ${formatDate(dates[dates.length - 1])}`;
+                : `${formatDate(dates[0])} ~ ${formatDate(
+                    dates[dates.length - 1]
+                  )}`;
             })()}
           </div>
           <p className="text-xs text-muted-foreground">지급완료 기준</p>
@@ -44,9 +44,7 @@ export function StatisticsCards({ filteredData }: StatisticsCardsProps) {
 
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">
-            지급 완료 건수
-          </CardTitle>
+          <CardTitle className="text-sm font-medium">지급 완료 건수</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="text-lg font-bold">
@@ -64,7 +62,7 @@ export function StatisticsCards({ filteredData }: StatisticsCardsProps) {
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
           <CardTitle className="text-sm font-medium">
-            최대 송금액
+            최대 로컬 송금금액
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -75,7 +73,7 @@ export function StatisticsCards({ filteredData }: StatisticsCardsProps) {
               );
               if (completedTransactions.length === 0) return "-";
               const amounts = completedTransactions
-                .map((t: any) => Number(t.sourceAmt) || 0)
+                .map((t: any) => Number(t.localSourceAmt ?? t.sourceAmt) || 0)
                 .filter((amount: number) => amount > 0);
               if (amounts.length === 0) return "-";
               const maxAmount = Math.max(...amounts);
@@ -89,7 +87,7 @@ export function StatisticsCards({ filteredData }: StatisticsCardsProps) {
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
           <CardTitle className="text-sm font-medium">
-            평균 송금액
+            평균 로컬 송금금액
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -100,10 +98,11 @@ export function StatisticsCards({ filteredData }: StatisticsCardsProps) {
               );
               if (completedTransactions.length === 0) return "-";
               const amounts = completedTransactions
-                .map((t: any) => Number(t.sourceAmt) || 0)
+                .map((t: any) => Number(t.localSourceAmt ?? t.sourceAmt) || 0)
                 .filter((amount: number) => amount > 0);
               if (amounts.length === 0) return "-";
-              const avgAmount = amounts.reduce((a, b) => a + b, 0) / amounts.length;
+              const avgAmount =
+                amounts.reduce((a, b) => a + b, 0) / amounts.length;
               return formatAmount(Math.round(avgAmount));
             })()}
           </div>
@@ -114,7 +113,7 @@ export function StatisticsCards({ filteredData }: StatisticsCardsProps) {
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
           <CardTitle className="text-sm font-medium">
-            중간값 송금액
+            중위 로컬 송금금액
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -125,7 +124,7 @@ export function StatisticsCards({ filteredData }: StatisticsCardsProps) {
               );
               if (completedTransactions.length === 0) return "-";
               const amounts = completedTransactions
-                .map((t: any) => Number(t.sourceAmt) || 0)
+                .map((t: any) => Number(t.localSourceAmt ?? t.sourceAmt) || 0)
                 .filter((amount: number) => amount > 0)
                 .sort((a: number, b: number) => a - b);
               if (amounts.length === 0) return "-";
@@ -144,7 +143,7 @@ export function StatisticsCards({ filteredData }: StatisticsCardsProps) {
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
           <CardTitle className="text-sm font-medium">
-            총 송금액
+            총 로컬 송금금액
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -155,7 +154,8 @@ export function StatisticsCards({ filteredData }: StatisticsCardsProps) {
               );
               if (completedTransactions.length === 0) return "-";
               const totalAmount = completedTransactions.reduce(
-                (sum: number, t: any) => sum + (Number(t.sourceAmt) || 0),
+                (sum: number, t: any) =>
+                  sum + (Number(t.localSourceAmt ?? t.sourceAmt) || 0),
                 0
               );
               return formatAmount(totalAmount);

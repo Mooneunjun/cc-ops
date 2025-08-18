@@ -102,20 +102,9 @@ function DynamicTableView({
 }: any) {
   const { state } = useSidebar();
 
-  // 사이드바 상태에 따른 너비 계산
-  const getSidebarAwareMaxWidth = () => {
-    const sidebarWidth = state === "expanded" ? "16rem" : "0rem"; // 256px : 48px
-    return `calc(100vw - ${sidebarWidth} - 2rem)`;
-  };
-
   const renderTableView = () => (
     <div className="w-full rounded-md border overflow-hidden">
-      <div
-        className="overflow-x-auto"
-        style={{
-          maxWidth: getSidebarAwareMaxWidth(),
-        }}
-      >
+      <div className="overflow-x-auto">
         <Table style={{ minWidth: "600px" }}>
           <TableHeader>
             <TableRow>

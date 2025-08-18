@@ -10,6 +10,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { X } from "lucide-react";
+import { getCurrencyBySendingCountry } from "./transaction-utils";
 
 interface TransactionDetailModalProps {
   transaction: any;
@@ -187,15 +188,15 @@ export function TransactionDetailModal({
                       <div className="text-muted-foreground mb-1">송금통화</div>
                       <div className="font-medium">{transaction.source}</div>
                     </div>
+
                     <div>
-                      <div className="text-muted-foreground mb-1">
-                        로컬 송금금액
-                      </div>
+                      <div className="text-muted-foreground mb-1">송금금액</div>
                       <div className="font-semibold">
                         {formatAmount(transaction.sourceAmt)}{" "}
                         {transaction.source}
                       </div>
                     </div>
+
                     <div>
                       <div className="text-muted-foreground mb-1">
                         입금 방식
@@ -205,16 +206,29 @@ export function TransactionDetailModal({
 
                     <div>
                       <div className="text-muted-foreground mb-1">
+                        로컬 송금금액
+                      </div>
+                      <div className="font-semibold">
+                        {formatAmount(
+                          transaction.localSourceAmt ?? transaction.sourceAmt
+                        )}{" "}
+                        {getCurrencyBySendingCountry(transaction.send)}
+                      </div>
+                    </div>
+
+                    <div>
+                      <div className="text-muted-foreground mb-1">계좌주명</div>
+                      <div>{transaction.paymentAccName || "-"}</div>
+                    </div>
+
+                    <div>
+                      <div className="text-muted-foreground mb-1">
                         총 입금액
                       </div>
                       <div className="font-semibold">
                         {formatAmount(transaction.totalAmt)}{" "}
-                        {transaction.source}
+                        {getCurrencyBySendingCountry(transaction.send)}
                       </div>
-                    </div>
-                    <div>
-                      <div className="text-muted-foreground mb-1">계좌주명</div>
-                      <div>{transaction.paymentAccName || "-"}</div>
                     </div>
                   </div>
                 </CardContent>
