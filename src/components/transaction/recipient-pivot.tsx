@@ -50,7 +50,9 @@ export function RecipientPivot({ filteredData }: RecipientPivotProps) {
     month: number;
   } | null>(null);
   const [statisticType, setStatisticType] = useState<StatisticType>("sum");
-  const [activeContextCell, setActiveContextCell] = useState<string | null>(null);
+  const [activeContextCell, setActiveContextCell] = useState<string | null>(
+    null
+  );
 
   // 수취인별 토글 상태 관리 (true = 폼침, false = 접힘)
   const [expandedRecipients, setExpandedRecipients] = useState<
@@ -85,7 +87,7 @@ export function RecipientPivot({ filteredData }: RecipientPivotProps) {
 
     const totalAmount = amounts.reduce((s, v) => s + v, 0);
     const formattedAmount = totalAmount.toLocaleString("ko-KR");
-    
+
     try {
       await navigator.clipboard.writeText(formattedAmount);
     } catch (err) {
@@ -357,12 +359,11 @@ export function RecipientPivot({ filteredData }: RecipientPivotProps) {
     }
   }, [groups, selectedCells, statisticType]);
 
-
   return (
     <div className="space-y-2">
       <div className="flex justify-between items-center">
         <h3 className="text-xl h-10 flex items-center font-semibold">
-          수취인별 송금량 (수취인-연도별)
+          수취인별 송금량
         </h3>
         <div className="flex items-center gap-4">
           {selectedCells.size > 0 && (
@@ -417,10 +418,10 @@ export function RecipientPivot({ filteredData }: RecipientPivotProps) {
           <Table className="min-w-max whitespace-nowrap [&_tr]:border-b-0 select-none">
             <TableHeader>
               <TableRow>
-                <TableHead className="text-center h-12 w-32 border-r border-dashed border-gray-300 bg-muted">
+                <TableHead className="text-center h-12 w-32 border-r border-dashed border-gray-300 bg-muted/70">
                   수취인
                 </TableHead>
-                <TableHead className="text-center h-12 w-20 border-r border-dashed border-gray-300 bg-muted">
+                <TableHead className="text-center h-12 w-20 border-r border-dashed border-gray-300 bg-muted/70">
                   연도
                 </TableHead>
                 {Array.from({ length: 12 }, (_, i) => i + 1).map((m) => (
@@ -440,7 +441,7 @@ export function RecipientPivot({ filteredData }: RecipientPivotProps) {
               {(() => {
                 const rowsOut: React.ReactElement[] = [];
 
-                groups.forEach((g) => {
+                groups.forEach((g, groupIndex) => {
                   const isExpanded = expandedRecipients[g.recipient];
 
                   if (isExpanded) {
@@ -452,7 +453,7 @@ export function RecipientPivot({ filteredData }: RecipientPivotProps) {
                           {localIdx === 0 && (
                             <TableCell
                               rowSpan={span}
-                              className="align-middle text-center w-32 border-r border-dashed border-gray-300 bg-muted"
+                              className="align-middle text-center w-32 border-r border-dashed border-gray-300 bg-muted/70"
                             >
                               <div className="flex items-center justify-center gap-1">
                                 <button
@@ -493,7 +494,7 @@ export function RecipientPivot({ filteredData }: RecipientPivotProps) {
                               </div>
                             </TableCell>
                           )}
-                          <TableCell className="font-medium bg-muted text-center w-20 border-r border-dashed border-gray-300">
+                          <TableCell className="font-medium bg-muted/70 text-center w-20 border-r border-dashed border-gray-300">
                             {row.year}
                           </TableCell>
                           {Array.from({ length: 12 }, (_, i) => i + 1).map(
@@ -566,7 +567,12 @@ export function RecipientPivot({ filteredData }: RecipientPivotProps) {
                                           : ""
                                       }`}
                                       onClick={(e) =>
-                                        handleCellClick(g.recipient, row.year, m, e)
+                                        handleCellClick(
+                                          g.recipient,
+                                          row.year,
+                                          m,
+                                          e
+                                        )
                                       }
                                       onMouseDown={(e) =>
                                         handleCellMouseDown(
@@ -584,125 +590,143 @@ export function RecipientPivot({ filteredData }: RecipientPivotProps) {
                                         )
                                       }
                                     >
-                                  {/* Selection outer border (final selection) */}
-                                  {isSelected &&
-                                    (!isDragging || !inDragRect) &&
-                                    (() => {
-                                      const topSel = selectedCells.has(
-                                        getCellId(g.recipient, row.year - 1, m)
-                                      );
-                                      const bottomSel = selectedCells.has(
-                                        getCellId(g.recipient, row.year + 1, m)
-                                      );
-                                      const leftSel = selectedCells.has(
-                                        getCellId(g.recipient, row.year, m - 1)
-                                      );
-                                      const rightSel = selectedCells.has(
-                                        getCellId(g.recipient, row.year, m + 1)
-                                      );
-                                      return (
-                                        <>
-                                          {!topSel && (
-                                            <div className="pointer-events-none absolute top-0 left-0 right-0 h-px bg-blue-500" />
-                                          )}
-                                          {!bottomSel && (
-                                            <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-px bg-blue-500" />
-                                          )}
-                                          {!leftSel && (
-                                            <div className="pointer-events-none absolute top-0 bottom-0 left-0 w-px bg-blue-500" />
-                                          )}
-                                          {!rightSel && (
-                                            <div className="pointer-events-none absolute top-0 bottom-0 right-0 w-px bg-blue-500" />
-                                          )}
-                                        </>
-                                      );
-                                    })()}
-                                  {/* Drag rectangle outer border only */}
-                                  {inDragRect &&
-                                    isDragging &&
-                                    (() => {
-                                      const startRowIndex = flatRows.findIndex(
-                                        (r) =>
-                                          r.recipient ===
-                                            dragStart!.recipient &&
-                                          r.year === dragStart!.year
-                                      );
-                                      const currentRowIndex =
-                                        flatRows.findIndex(
-                                          (r) =>
-                                            r.recipient ===
-                                              dragCurrent!.recipient &&
-                                            r.year === dragCurrent!.year
+                                      {/* Selection outer border (final selection) */}
+                                      {isSelected &&
+                                        (!isDragging || !inDragRect) &&
+                                        (() => {
+                                          const topSel = selectedCells.has(
+                                            getCellId(
+                                              g.recipient,
+                                              row.year - 1,
+                                              m
+                                            )
+                                          );
+                                          const bottomSel = selectedCells.has(
+                                            getCellId(
+                                              g.recipient,
+                                              row.year + 1,
+                                              m
+                                            )
+                                          );
+                                          const leftSel = selectedCells.has(
+                                            getCellId(
+                                              g.recipient,
+                                              row.year,
+                                              m - 1
+                                            )
+                                          );
+                                          const rightSel = selectedCells.has(
+                                            getCellId(
+                                              g.recipient,
+                                              row.year,
+                                              m + 1
+                                            )
+                                          );
+                                          return (
+                                            <>
+                                              {!topSel && (
+                                                <div className="pointer-events-none absolute top-0 left-0 right-0 h-px bg-blue-500" />
+                                              )}
+                                              {!bottomSel && (
+                                                <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-px bg-blue-500" />
+                                              )}
+                                              {!leftSel && (
+                                                <div className="pointer-events-none absolute top-0 bottom-0 left-0 w-px bg-blue-500" />
+                                              )}
+                                              {!rightSel && (
+                                                <div className="pointer-events-none absolute top-0 bottom-0 right-0 w-px bg-blue-500" />
+                                              )}
+                                            </>
+                                          );
+                                        })()}
+                                      {/* Drag rectangle outer border only */}
+                                      {inDragRect &&
+                                        isDragging &&
+                                        (() => {
+                                          const startRowIndex =
+                                            flatRows.findIndex(
+                                              (r) =>
+                                                r.recipient ===
+                                                  dragStart!.recipient &&
+                                                r.year === dragStart!.year
+                                            );
+                                          const currentRowIndex =
+                                            flatRows.findIndex(
+                                              (r) =>
+                                                r.recipient ===
+                                                  dragCurrent!.recipient &&
+                                                r.year === dragCurrent!.year
+                                            );
+                                          const thisRowIndex =
+                                            flatRows.findIndex(
+                                              (r) =>
+                                                r.recipient === g.recipient &&
+                                                r.year === row.year
+                                            );
+
+                                          const minRowIndex = Math.min(
+                                            startRowIndex,
+                                            currentRowIndex
+                                          );
+                                          const maxRowIndex = Math.max(
+                                            startRowIndex,
+                                            currentRowIndex
+                                          );
+                                          const minM = Math.min(
+                                            dragStart!.month,
+                                            dragCurrent!.month
+                                          );
+                                          const maxM = Math.max(
+                                            dragStart!.month,
+                                            dragCurrent!.month
+                                          );
+
+                                          const isTopEdge =
+                                            thisRowIndex === minRowIndex;
+                                          const isBottomEdge =
+                                            thisRowIndex === maxRowIndex;
+                                          const isLeftEdge = m === minM;
+                                          const isRightEdge = m === maxM;
+
+                                          return (
+                                            <>
+                                              {isTopEdge && (
+                                                <div className="pointer-events-none absolute top-0 left-0 right-0 h-px bg-blue-300" />
+                                              )}
+                                              {isBottomEdge && (
+                                                <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-px bg-blue-300" />
+                                              )}
+                                              {isLeftEdge && (
+                                                <div className="pointer-events-none absolute top-0 bottom-0 left-0 w-px bg-blue-300" />
+                                              )}
+                                              {isRightEdge && (
+                                                <div className="pointer-events-none absolute top-0 bottom-0 right-0 w-px bg-blue-300" />
+                                              )}
+                                            </>
+                                          );
+                                        })()}
+                                      {(() => {
+                                        const agg = row.months[m] || {
+                                          amount: 0,
+                                          count: 0,
+                                        };
+                                        const amt = agg.amount;
+                                        const cnt = agg.count;
+                                        if (cnt === 0 && amt === 0)
+                                          return (
+                                            <div className="text-sm text-center text-muted-foreground">
+                                              -
+                                            </div>
+                                          );
+                                        return (
+                                          <div className="text-xs">
+                                            <div className="text-[11px] text-muted-foreground">
+                                              {cnt}
+                                            </div>
+                                            <div>{formatAmount(amt)}</div>
+                                          </div>
                                         );
-                                      const thisRowIndex = flatRows.findIndex(
-                                        (r) =>
-                                          r.recipient === g.recipient &&
-                                          r.year === row.year
-                                      );
-
-                                      const minRowIndex = Math.min(
-                                        startRowIndex,
-                                        currentRowIndex
-                                      );
-                                      const maxRowIndex = Math.max(
-                                        startRowIndex,
-                                        currentRowIndex
-                                      );
-                                      const minM = Math.min(
-                                        dragStart!.month,
-                                        dragCurrent!.month
-                                      );
-                                      const maxM = Math.max(
-                                        dragStart!.month,
-                                        dragCurrent!.month
-                                      );
-
-                                      const isTopEdge =
-                                        thisRowIndex === minRowIndex;
-                                      const isBottomEdge =
-                                        thisRowIndex === maxRowIndex;
-                                      const isLeftEdge = m === minM;
-                                      const isRightEdge = m === maxM;
-
-                                      return (
-                                        <>
-                                          {isTopEdge && (
-                                            <div className="pointer-events-none absolute top-0 left-0 right-0 h-px bg-blue-300" />
-                                          )}
-                                          {isBottomEdge && (
-                                            <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-px bg-blue-300" />
-                                          )}
-                                          {isLeftEdge && (
-                                            <div className="pointer-events-none absolute top-0 bottom-0 left-0 w-px bg-blue-300" />
-                                          )}
-                                          {isRightEdge && (
-                                            <div className="pointer-events-none absolute top-0 bottom-0 right-0 w-px bg-blue-300" />
-                                          )}
-                                        </>
-                                      );
-                                    })()}
-                                  {(() => {
-                                    const agg = row.months[m] || {
-                                      amount: 0,
-                                      count: 0,
-                                    };
-                                    const amt = agg.amount;
-                                    const cnt = agg.count;
-                                    if (cnt === 0 && amt === 0)
-                                      return (
-                                        <div className="text-sm text-center text-muted-foreground">
-                                          -
-                                        </div>
-                                      );
-                                    return (
-                                      <div className="text-xs">
-                                        <div className="text-[11px] text-muted-foreground">
-                                          {cnt}
-                                        </div>
-                                        <div>{formatAmount(amt)}</div>
-                                      </div>
-                                    );
-                                  })()}
+                                      })()}
                                     </TableCell>
                                   </ContextMenuTrigger>
                                   <ContextMenuContent>
@@ -720,22 +744,28 @@ export function RecipientPivot({ filteredData }: RecipientPivotProps) {
                           <ContextMenu
                             onOpenChange={(open) => {
                               if (open) {
-                                setActiveContextCell(`row-${g.recipient}-${row.year}-total`);
+                                setActiveContextCell(
+                                  `row-${g.recipient}-${row.year}-total`
+                                );
                               } else {
                                 setActiveContextCell(null);
                               }
                             }}
                           >
                             <ContextMenuTrigger asChild>
-                              <TableCell 
+                              <TableCell
                                 className={`text-center w-24 cursor-pointer transition-colors ${
-                                  activeContextCell === `row-${g.recipient}-${row.year}-total` ? "bg-green-100" : ""
+                                  activeContextCell ===
+                                  `row-${g.recipient}-${row.year}-total`
+                                    ? "bg-green-100"
+                                    : ""
                                 }`}
                               >
                                 {(() => {
                                   const cnt = row.rowTotalCnt;
                                   const amt = row.rowTotalAmt;
-                                  if (cnt === 0 && amt === 0) return <span>-</span>;
+                                  if (cnt === 0 && amt === 0)
+                                    return <span>-</span>;
                                   return (
                                     <div className="text-xs">
                                       <div className="text-[11px] text-muted-foreground">
@@ -751,15 +781,19 @@ export function RecipientPivot({ filteredData }: RecipientPivotProps) {
                               <ContextMenuItem
                                 onClick={() => {
                                   if (row.rowTotalAmt > 0) {
-                                    const formattedAmount = row.rowTotalAmt.toLocaleString("ko-KR");
-                                    navigator.clipboard.writeText(formattedAmount).catch(() => {
-                                      const textArea = document.createElement("textarea");
-                                      textArea.value = formattedAmount;
-                                      document.body.appendChild(textArea);
-                                      textArea.select();
-                                      document.execCommand("copy");
-                                      document.body.removeChild(textArea);
-                                    });
+                                    const formattedAmount =
+                                      row.rowTotalAmt.toLocaleString("ko-KR");
+                                    navigator.clipboard
+                                      .writeText(formattedAmount)
+                                      .catch(() => {
+                                        const textArea =
+                                          document.createElement("textarea");
+                                        textArea.value = formattedAmount;
+                                        document.body.appendChild(textArea);
+                                        textArea.select();
+                                        document.execCommand("copy");
+                                        document.body.removeChild(textArea);
+                                      });
                                   }
                                 }}
                                 disabled={row.rowTotalAmt === 0}
@@ -798,17 +832,19 @@ export function RecipientPivot({ filteredData }: RecipientPivotProps) {
                     rowsOut.push(
                       <TableRow
                         key={`${g.recipient}__total`}
-                        className="bg-muted"
+                        className="bg-muted/70"
                       >
-                        <TableCell className="font-medium text-center w-20 border-r border-dashed border-gray-300">
+                        <TableCell className="font-medium text-center w-20 border-r border-dashed border-gray-300 !bg-muted/70">
                           총계
                         </TableCell>
                         {recTotalsByMonth.map(({ m, cnt, amt }) => (
-                          <ContextMenu 
+                          <ContextMenu
                             key={m}
                             onOpenChange={(open) => {
                               if (open) {
-                                setActiveContextCell(`expanded-${g.recipient}-${m}`);
+                                setActiveContextCell(
+                                  `expanded-${g.recipient}-${m}`
+                                );
                               } else {
                                 setActiveContextCell(null);
                               }
@@ -816,8 +852,11 @@ export function RecipientPivot({ filteredData }: RecipientPivotProps) {
                           >
                             <ContextMenuTrigger asChild>
                               <TableCell
-                                className={`text-center w-20 border-r border-dashed border-gray-300 cursor-pointer transition-colors ${
-                                  activeContextCell === `expanded-${g.recipient}-${m}` ? "bg-green-100" : ""
+                                className={`text-center w-20 border-r border-dashed border-gray-300 cursor-pointer transition-colors bg-slate-100 ${
+                                  activeContextCell ===
+                                  `expanded-${g.recipient}-${m}`
+                                    ? "bg-green-100"
+                                    : ""
                                 }`}
                               >
                                 {cnt === 0 && amt === 0 ? (
@@ -838,15 +877,19 @@ export function RecipientPivot({ filteredData }: RecipientPivotProps) {
                               <ContextMenuItem
                                 onClick={() => {
                                   if (amt > 0) {
-                                    const formattedAmount = amt.toLocaleString("ko-KR");
-                                    navigator.clipboard.writeText(formattedAmount).catch(() => {
-                                      const textArea = document.createElement("textarea");
-                                      textArea.value = formattedAmount;
-                                      document.body.appendChild(textArea);
-                                      textArea.select();
-                                      document.execCommand("copy");
-                                      document.body.removeChild(textArea);
-                                    });
+                                    const formattedAmount =
+                                      amt.toLocaleString("ko-KR");
+                                    navigator.clipboard
+                                      .writeText(formattedAmount)
+                                      .catch(() => {
+                                        const textArea =
+                                          document.createElement("textarea");
+                                        textArea.value = formattedAmount;
+                                        document.body.appendChild(textArea);
+                                        textArea.select();
+                                        document.execCommand("copy");
+                                        document.body.removeChild(textArea);
+                                      });
                                   }
                                 }}
                                 disabled={amt === 0}
@@ -859,16 +902,21 @@ export function RecipientPivot({ filteredData }: RecipientPivotProps) {
                         <ContextMenu
                           onOpenChange={(open) => {
                             if (open) {
-                              setActiveContextCell(`expanded-${g.recipient}-total`);
+                              setActiveContextCell(
+                                `expanded-${g.recipient}-total`
+                              );
                             } else {
                               setActiveContextCell(null);
                             }
                           }}
                         >
                           <ContextMenuTrigger asChild>
-                            <TableCell 
-                              className={`text-center w-24 cursor-pointer transition-colors ${
-                                activeContextCell === `expanded-${g.recipient}-total` ? "bg-green-100" : ""
+                            <TableCell
+                              className={`text-center w-24 cursor-pointer transition-colors bg-slate-100 ${
+                                activeContextCell ===
+                                `expanded-${g.recipient}-total`
+                                  ? "bg-green-100"
+                                  : ""
                               }`}
                             >
                               {recTotalCnt === 0 && recTotalAmt === 0 ? (
@@ -887,15 +935,19 @@ export function RecipientPivot({ filteredData }: RecipientPivotProps) {
                             <ContextMenuItem
                               onClick={() => {
                                 if (recTotalAmt > 0) {
-                                  const formattedAmount = recTotalAmt.toLocaleString("ko-KR");
-                                  navigator.clipboard.writeText(formattedAmount).catch(() => {
-                                    const textArea = document.createElement("textarea");
-                                    textArea.value = formattedAmount;
-                                    document.body.appendChild(textArea);
-                                    textArea.select();
-                                    document.execCommand("copy");
-                                    document.body.removeChild(textArea);
-                                  });
+                                  const formattedAmount =
+                                    recTotalAmt.toLocaleString("ko-KR");
+                                  navigator.clipboard
+                                    .writeText(formattedAmount)
+                                    .catch(() => {
+                                      const textArea =
+                                        document.createElement("textarea");
+                                      textArea.value = formattedAmount;
+                                      document.body.appendChild(textArea);
+                                      textArea.select();
+                                      document.execCommand("copy");
+                                      document.body.removeChild(textArea);
+                                    });
                                 }
                               }}
                               disabled={recTotalAmt === 0}
@@ -934,9 +986,9 @@ export function RecipientPivot({ filteredData }: RecipientPivotProps) {
                     rowsOut.push(
                       <TableRow
                         key={`${g.recipient}__collapsed`}
-                        className="bg-muted"
+                        className="bg-muted/70"
                       >
-                        <TableCell className="text-center w-32 border-r border-dashed border-gray-300 bg-muted">
+                        <TableCell className="text-center w-32 border-r border-dashed border-gray-300 bg-muted/70">
                           <div className="flex items-center justify-center gap-1">
                             <button
                               onClick={() => toggleRecipient(g.recipient)}
@@ -975,15 +1027,13 @@ export function RecipientPivot({ filteredData }: RecipientPivotProps) {
                             <span className="truncate">{g.recipient}</span>
                           </div>
                         </TableCell>
-                        <TableCell className="font-medium text-center w-20 border-r border-dashed border-gray-300 bg-muted">
+                        <TableCell className="font-medium text-center w-20 border-r border-dashed border-gray-300 !bg-muted/70">
                           총계
                         </TableCell>
                         {recTotalsByMonth.map(({ m, cnt, amt }) => (
                           <ContextMenu key={m}>
                             <ContextMenuTrigger asChild>
-                              <TableCell
-                                className="text-center w-20 border-r border-dashed border-gray-300 cursor-pointer transition-colors"
-                              >
+                              <TableCell className="text-center w-20 border-r border-dashed border-gray-300 cursor-pointer transition-colors bg-slate-100">
                                 {cnt === 0 && amt === 0 ? (
                                   <div className="text-sm text-center text-muted-foreground">
                                     -
@@ -1002,15 +1052,19 @@ export function RecipientPivot({ filteredData }: RecipientPivotProps) {
                               <ContextMenuItem
                                 onClick={() => {
                                   if (amt > 0) {
-                                    const formattedAmount = amt.toLocaleString("ko-KR");
-                                    navigator.clipboard.writeText(formattedAmount).catch(() => {
-                                      const textArea = document.createElement("textarea");
-                                      textArea.value = formattedAmount;
-                                      document.body.appendChild(textArea);
-                                      textArea.select();
-                                      document.execCommand("copy");
-                                      document.body.removeChild(textArea);
-                                    });
+                                    const formattedAmount =
+                                      amt.toLocaleString("ko-KR");
+                                    navigator.clipboard
+                                      .writeText(formattedAmount)
+                                      .catch(() => {
+                                        const textArea =
+                                          document.createElement("textarea");
+                                        textArea.value = formattedAmount;
+                                        document.body.appendChild(textArea);
+                                        textArea.select();
+                                        document.execCommand("copy");
+                                        document.body.removeChild(textArea);
+                                      });
                                   }
                                 }}
                                 disabled={amt === 0}
@@ -1022,9 +1076,7 @@ export function RecipientPivot({ filteredData }: RecipientPivotProps) {
                         ))}
                         <ContextMenu>
                           <ContextMenuTrigger asChild>
-                            <TableCell 
-                              className="text-center w-24 cursor-pointer transition-colors"
-                            >
+                            <TableCell className="text-center w-24 cursor-pointer transition-colors bg-slate-100">
                               {recTotalCnt === 0 && recTotalAmt === 0 ? (
                                 <span>-</span>
                               ) : (
@@ -1041,15 +1093,19 @@ export function RecipientPivot({ filteredData }: RecipientPivotProps) {
                             <ContextMenuItem
                               onClick={() => {
                                 if (recTotalAmt > 0) {
-                                  const formattedAmount = recTotalAmt.toLocaleString("ko-KR");
-                                  navigator.clipboard.writeText(formattedAmount).catch(() => {
-                                    const textArea = document.createElement("textarea");
-                                    textArea.value = formattedAmount;
-                                    document.body.appendChild(textArea);
-                                    textArea.select();
-                                    document.execCommand("copy");
-                                    document.body.removeChild(textArea);
-                                  });
+                                  const formattedAmount =
+                                    recTotalAmt.toLocaleString("ko-KR");
+                                  navigator.clipboard
+                                    .writeText(formattedAmount)
+                                    .catch(() => {
+                                      const textArea =
+                                        document.createElement("textarea");
+                                      textArea.value = formattedAmount;
+                                      document.body.appendChild(textArea);
+                                      textArea.select();
+                                      document.execCommand("copy");
+                                      document.body.removeChild(textArea);
+                                    });
                                 }
                               }}
                               disabled={recTotalAmt === 0}
@@ -1062,27 +1118,32 @@ export function RecipientPivot({ filteredData }: RecipientPivotProps) {
                     );
                   }
 
-                  // 그룹 구분 점선 (수취인 간)
-                  rowsOut.push(
-                    <TableRow key={`sep-${g.recipient}`}>
-                      <TableCell colSpan={15} className="p-0">
-                        <div className="h-px border-t border-dashed border-gray-300" />
-                      </TableCell>
-                    </TableRow>
-                  );
+                  // 그룹 구분 점선 (수취인 간) - 마지막 그룹이 아닌 경우만
+                  if (groupIndex < groups.length - 1) {
+                    rowsOut.push(
+                      <TableRow key={`sep-${g.recipient}`}>
+                        <TableCell colSpan={15} className="p-0">
+                          <div className="h-px border-t border-gray-300" />
+                        </TableCell>
+                      </TableRow>
+                    );
+                  }
                 });
                 return rowsOut;
               })()}
               {/* 총계 행 */}
-              <TableRow className="bg-primary/5">
+              <TableRow
+                className="bg-slate-50 hover:bg-slate-50"
+                style={{ borderTop: "2px solid #9CA3AF" }}
+              >
                 <TableCell
                   colSpan={2}
-                  className="font-bold text-center border-r border-dashed border-gray-300"
+                  className="font-bold text-center border-r border-dashed border-gray-300 bg-muted/70"
                 >
                   전체 총계
                 </TableCell>
                 {Array.from({ length: 12 }, (_, i) => i + 1).map((m) => (
-                  <ContextMenu 
+                  <ContextMenu
                     key={m}
                     onOpenChange={(open) => {
                       if (open) {
@@ -1095,7 +1156,9 @@ export function RecipientPivot({ filteredData }: RecipientPivotProps) {
                     <ContextMenuTrigger asChild>
                       <TableCell
                         className={`text-center w-20 border-r border-dashed border-gray-300 cursor-pointer transition-colors ${
-                          activeContextCell === `grand-total-${m}` ? "bg-green-100" : ""
+                          activeContextCell === `grand-total-${m}`
+                            ? "bg-green-100"
+                            : ""
                         }`}
                       >
                         {(() => {
@@ -1119,14 +1182,17 @@ export function RecipientPivot({ filteredData }: RecipientPivotProps) {
                           const amt = monthTotalsAmt[m] || 0;
                           if (amt > 0) {
                             const formattedAmount = amt.toLocaleString("ko-KR");
-                            navigator.clipboard.writeText(formattedAmount).catch(() => {
-                              const textArea = document.createElement("textarea");
-                              textArea.value = formattedAmount;
-                              document.body.appendChild(textArea);
-                              textArea.select();
-                              document.execCommand("copy");
-                              document.body.removeChild(textArea);
-                            });
+                            navigator.clipboard
+                              .writeText(formattedAmount)
+                              .catch(() => {
+                                const textArea =
+                                  document.createElement("textarea");
+                                textArea.value = formattedAmount;
+                                document.body.appendChild(textArea);
+                                textArea.select();
+                                document.execCommand("copy");
+                                document.body.removeChild(textArea);
+                              });
                           }
                         }}
                         disabled={(monthTotalsAmt[m] || 0) === 0}
@@ -1146,9 +1212,13 @@ export function RecipientPivot({ filteredData }: RecipientPivotProps) {
                   }}
                 >
                   <ContextMenuTrigger asChild>
-                    <TableCell className={`text-center w-24 cursor-pointer transition-colors ${
-                      activeContextCell === "grand-total-total" ? "bg-green-100" : ""
-                    }`}>
+                    <TableCell
+                      className={`text-center w-24 cursor-pointer transition-colors ${
+                        activeContextCell === "grand-total-total"
+                          ? "bg-green-100"
+                          : ""
+                      }`}
+                    >
                       {(() => {
                         const cnt = grandTotalCnt;
                         const amt = grandTotalAmt;
@@ -1168,15 +1238,19 @@ export function RecipientPivot({ filteredData }: RecipientPivotProps) {
                     <ContextMenuItem
                       onClick={() => {
                         if (grandTotalAmt > 0) {
-                          const formattedAmount = grandTotalAmt.toLocaleString("ko-KR");
-                          navigator.clipboard.writeText(formattedAmount).catch(() => {
-                            const textArea = document.createElement("textarea");
-                            textArea.value = formattedAmount;
-                            document.body.appendChild(textArea);
-                            textArea.select();
-                            document.execCommand("copy");
-                            document.body.removeChild(textArea);
-                          });
+                          const formattedAmount =
+                            grandTotalAmt.toLocaleString("ko-KR");
+                          navigator.clipboard
+                            .writeText(formattedAmount)
+                            .catch(() => {
+                              const textArea =
+                                document.createElement("textarea");
+                              textArea.value = formattedAmount;
+                              document.body.appendChild(textArea);
+                              textArea.select();
+                              document.execCommand("copy");
+                              document.body.removeChild(textArea);
+                            });
                         }
                       }}
                       disabled={grandTotalAmt === 0}

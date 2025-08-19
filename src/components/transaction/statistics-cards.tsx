@@ -1,5 +1,5 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { formatAmount } from "./transaction-utils";
+import { formatAmount, getCurrencyBySendingCountry } from "./transaction-utils";
 
 interface StatisticsCardsProps {
   filteredData: any[];
@@ -7,7 +7,7 @@ interface StatisticsCardsProps {
 
 export function StatisticsCards({ filteredData }: StatisticsCardsProps) {
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-5 gap-4">
+    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4">
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
           <CardTitle className="text-sm font-medium">지급완료 기간</CardTitle>
@@ -72,12 +72,15 @@ export function StatisticsCards({ filteredData }: StatisticsCardsProps) {
                 (transaction: any) => transaction.status === "지급완료"
               );
               if (completedTransactions.length === 0) return "-";
-              const amounts = completedTransactions
-                .map((t: any) => Number(t.localSourceAmt ?? t.sourceAmt) || 0)
-                .filter((amount: number) => amount > 0);
-              if (amounts.length === 0) return "-";
-              const maxAmount = Math.max(...amounts);
-              return formatAmount(maxAmount);
+              const maxTransaction = completedTransactions.reduce((max: any, t: any) => {
+                const amount = Number(t.localSourceAmt ?? t.sourceAmt) || 0;
+                const maxAmount = Number(max.localSourceAmt ?? max.sourceAmt) || 0;
+                return amount > maxAmount ? t : max;
+              });
+              const maxAmount = Number(maxTransaction.localSourceAmt ?? maxTransaction.sourceAmt) || 0;
+              if (maxAmount === 0) return "-";
+              const currency = getCurrencyBySendingCountry(maxTransaction.send);
+              return `${formatAmount(maxAmount)} ${currency}`;
             })()}
           </div>
           <p className="text-xs text-muted-foreground">지급완료 기준</p>
@@ -101,9 +104,9 @@ export function StatisticsCards({ filteredData }: StatisticsCardsProps) {
                 .map((t: any) => Number(t.localSourceAmt ?? t.sourceAmt) || 0)
                 .filter((amount: number) => amount > 0);
               if (amounts.length === 0) return "-";
-              const avgAmount =
-                amounts.reduce((a, b) => a + b, 0) / amounts.length;
-              return formatAmount(Math.round(avgAmount));
+              const avgAmount = amounts.reduce((a, b) => a + b, 0) / amounts.length;
+              const currency = getCurrencyBySendingCountry(completedTransactions[0].send);
+              return `${formatAmount(Math.round(avgAmount))} ${currency}`;
             })()}
           </div>
           <p className="text-xs text-muted-foreground">지급완료 기준</p>
@@ -133,7 +136,8 @@ export function StatisticsCards({ filteredData }: StatisticsCardsProps) {
                 amounts.length % 2 === 0
                   ? (amounts[middle - 1] + amounts[middle]) / 2
                   : amounts[middle];
-              return formatAmount(Math.round(median));
+              const currency = getCurrencyBySendingCountry(completedTransactions[0].send);
+              return `${formatAmount(Math.round(median))} ${currency}`;
             })()}
           </div>
           <p className="text-xs text-muted-foreground">지급완료 기준</p>
@@ -158,7 +162,8 @@ export function StatisticsCards({ filteredData }: StatisticsCardsProps) {
                   sum + (Number(t.localSourceAmt ?? t.sourceAmt) || 0),
                 0
               );
-              return formatAmount(totalAmount);
+              const currency = getCurrencyBySendingCountry(completedTransactions[0].send);
+              return `${formatAmount(totalAmount)} ${currency}`;
             })()}
           </div>
           <p className="text-xs text-muted-foreground">지급완료 기준</p>
