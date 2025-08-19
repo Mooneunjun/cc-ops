@@ -55,37 +55,40 @@ export function useTransactionStatistics(
       }
     });
 
-    const selectedValues: number[] = [];
+    const selectedCounts: number[] = [];
+    const selectedAmounts: number[] = [];
     selectedCells.forEach((cellId) => {
       const [yearStr, monthStr] = cellId.split("-");
       const year = parseInt(yearStr);
       const month = parseInt(monthStr);
 
       if (pivotData[year] && pivotData[year][month]) {
-        if (statisticType === "count") {
-          selectedValues.push(pivotData[year][month].count);
-        } else {
-          selectedValues.push(pivotData[year][month].amount);
+        const { count, amount } = pivotData[year][month];
+        selectedCounts.push(count);
+        if (amount > 0) {
+          selectedAmounts.push(amount);
         }
       }
     });
 
-    if (selectedValues.length === 0) return 0;
+    if (statisticType === "count") {
+      return selectedCounts.reduce((sum, c) => sum + c, 0);
+    }
+
+    if (selectedAmounts.length === 0) return 0;
 
     switch (statisticType) {
       case "sum":
-        return selectedValues.reduce((sum, val) => sum + val, 0);
+        return selectedAmounts.reduce((sum, val) => sum + val, 0);
       case "avg":
-        return (
-          selectedValues.reduce((sum, val) => sum + val, 0) /
-          selectedValues.length
+        return Math.round(
+          selectedAmounts.reduce((sum, val) => sum + val, 0) /
+            selectedAmounts.length
         );
       case "max":
-        return Math.max(...selectedValues);
+        return Math.max(...selectedAmounts);
       case "min":
-        return Math.min(...selectedValues);
-      case "count":
-        return selectedValues.length;
+        return Math.min(...selectedAmounts);
       default:
         return 0;
     }
