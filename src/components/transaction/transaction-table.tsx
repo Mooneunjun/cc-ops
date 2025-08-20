@@ -1,7 +1,6 @@
 "use client";
 import React, { useState, useMemo } from "react";
-import { useSidebar } from "@/components/ui/sidebar";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { DateRange } from "react-day-picker";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -46,7 +45,6 @@ interface TransactionTableProps {
   data: any;
 }
 export function TransactionTable({ data }: TransactionTableProps) {
-  const { state, isMobile } = useSidebar();
   const [selectedTransaction, setSelectedTransaction] = useState<any>(null);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   // 필터 상태
@@ -176,14 +174,17 @@ export function TransactionTable({ data }: TransactionTableProps) {
         </CardContent>
       </Card>
       {/* 데이터 분석 탭 */}
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="statistics">Statistics</TabsTrigger>
-          <TabsTrigger value="insights">Insight</TabsTrigger>
-          <TabsTrigger value="charts">Chart</TabsTrigger>
-        </TabsList>
+      <div className="w-full">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <TabsList className="grid w-full grid-cols-3">
+            <TabsTrigger value="statistics">Statistics</TabsTrigger>
+            <TabsTrigger value="insights">Insight</TabsTrigger>
+            <TabsTrigger value="charts">Chart</TabsTrigger>
+          </TabsList>
+        </Tabs>
 
-        <TabsContent value="statistics" className="space-y-4">
+        {/* 모든 탭 내용을 항상 렌더링하고 CSS로 숨김처리 */}
+        <div className={`space-y-4 mt-6 ${activeTab === "statistics" ? "block" : "hidden"}`}>
           <StatisticsCards filteredData={filteredData} />
 
           {/* 테이블 */}
@@ -382,16 +383,16 @@ export function TransactionTable({ data }: TransactionTableProps) {
               <div className="hidden sm:block flex-1"></div>
             </div>
           )}
-        </TabsContent>
+        </div>
 
-        <TabsContent value="charts" className="space-y-4">
-          <ChartsTab />
-        </TabsContent>
+        <div className={`space-y-4 mt-6 ${activeTab === "charts" ? "block" : "hidden"}`}>
+          <ChartsTab filteredData={filteredData} />
+        </div>
 
-        <TabsContent value="insights" className="space-y-4">
+        <div className={`space-y-4 mt-6 ${activeTab === "insights" ? "block" : "hidden"}`}>
           <InsightsTab filteredData={filteredData} />
-        </TabsContent>
-      </Tabs>
+        </div>
+      </div>
       <TransactionDetailModal
         transaction={selectedTransaction}
         isOpen={isDetailModalOpen}

@@ -30,6 +30,8 @@ interface RecipientPivotProps {
 }
 
 export function RecipientPivot({ filteredData }: RecipientPivotProps) {
+  // 로컬 상태로 변경
+  const [expandedRecipients, setExpandedRecipients] = useState<Record<string, boolean>>({});
   const [selectedCells, setSelectedCells] = useState<Set<string>>(new Set());
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState<{
@@ -54,10 +56,13 @@ export function RecipientPivot({ filteredData }: RecipientPivotProps) {
     null
   );
 
-  // 수취인별 토글 상태 관리 (true = 폼침, false = 접힘)
-  const [expandedRecipients, setExpandedRecipients] = useState<
-    Record<string, boolean>
-  >({});
+  // 로컬 토글 함수
+  const toggleRecipient = (recipient: string) => {
+    setExpandedRecipients(prev => ({
+      ...prev,
+      [recipient]: !prev[recipient]
+    }));
+  };
 
   // 선택된 셀들의 금액 복사 함수
   const copySelectedCellsAmount = async () => {
@@ -90,7 +95,7 @@ export function RecipientPivot({ filteredData }: RecipientPivotProps) {
 
     try {
       await navigator.clipboard.writeText(formattedAmount);
-    } catch (err) {
+    } catch {
       // fallback for older browsers
       const textArea = document.createElement("textarea");
       textArea.value = formattedAmount;
@@ -101,13 +106,6 @@ export function RecipientPivot({ filteredData }: RecipientPivotProps) {
     }
   };
 
-  // 수취인 토글 함수
-  const toggleRecipient = (recipient: string) => {
-    setExpandedRecipients((prev) => ({
-      ...prev,
-      [recipient]: !prev[recipient],
-    }));
-  };
 
   // 수취인별 셀 ID 생성 (recipient-year-month 형식)
   const getCellId = (recipient: string, year: number, month: number) =>
@@ -410,7 +408,7 @@ export function RecipientPivot({ filteredData }: RecipientPivotProps) {
         </div>
       </div>
       <div
-        className="rounded-md border"
+        className="rounded-md border overflow-hidden"
         onMouseUp={handleMouseUp}
         onMouseLeave={handleMouseUp}
       >
