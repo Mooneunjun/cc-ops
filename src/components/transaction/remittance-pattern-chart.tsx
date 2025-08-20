@@ -61,29 +61,10 @@ const getCurrencySymbol = (currency: string) => {
 
 export function RemittancePatternChart({ data }: RemittancePatternChartProps) {
   const [activeYear, setActiveYear] = React.useState<number | null>(null);
-
-  // 데이터가 없을 때 빈 상태 처리
-  if (!data || data.length === 0) {
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle>Remittance Pattern Analysis</CardTitle>
-          <CardDescription>
-            Shows monthly remittance and transaction count trends
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="flex items-center justify-center h-[350px]">
-          <div className="text-muted-foreground text-center">
-            <p>No data to display.</p>
-            <p className="text-sm mt-1">Please check transaction data.</p>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
+  const safeData = Array.isArray(data) ? data : [];
 
   // 연도별로 데이터 그룹화
-  const yearlyData = data.reduce((acc, item) => {
+  const yearlyData = safeData.reduce((acc, item) => {
     if (!acc[item.year]) {
       acc[item.year] = {};
     }
@@ -112,7 +93,7 @@ export function RemittancePatternChart({ data }: RemittancePatternChartProps) {
 
   const chartData = Array.from({ length: 12 }, (_, index) => {
     const month = index + 1;
-    const monthData: any = {
+    const monthData: Record<string, number | string> = {
       month: monthNames[index],
     };
 
@@ -125,29 +106,12 @@ export function RemittancePatternChart({ data }: RemittancePatternChartProps) {
 
   // 차트 데이터가 유효한지 확인
   const hasValidData = chartData.some((monthData) =>
-    Object.keys(monthData).some(
-      (key) => key.startsWith("year_") && monthData[key] > 0
-    )
+    Object.keys(monthData).some((key) => {
+      if (!key.startsWith("year_")) return false;
+      const val = (monthData as Record<string, number | string>)[key];
+      return typeof val === "number" && val > 0;
+    })
   );
-
-  if (!hasValidData) {
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle>송금량 패턴 분석</CardTitle>
-          <CardDescription>
-            월별 송금량과 거래 건수 추이를 보여줍니다
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="flex items-center justify-center h-[300px]">
-          <div className="text-muted-foreground text-center">
-            <p>유효한 송금 데이터가 없습니다.</p>
-            <p className="text-sm mt-1">필터를 조정해보세요.</p>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
 
   // 동적 차트 설정 생성
   const chartConfig: ChartConfig = {};
@@ -175,18 +139,6 @@ export function RemittancePatternChart({ data }: RemittancePatternChartProps) {
   const currency = data[0]?.currency || "KRW";
   const currencySymbol = getCurrencySymbol(currency);
   const dominantCountry = data[0]?.dominantCountry || "KR";
-
-  // 연도별 총합 계산
-  const yearTotals = React.useMemo(() => {
-    const totals: Record<number, number> = {};
-    years.forEach((year) => {
-      totals[year] = Object.values(yearlyData[year] || {}).reduce(
-        (sum, amount) => sum + amount,
-        0
-      );
-    });
-    return totals;
-  }, [years, yearlyData]);
 
   // 초기에는 전체 보기로 시작 (activeYear = null)
 
