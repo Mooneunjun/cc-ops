@@ -55,6 +55,7 @@ export function PivotTable({
   colTotals,
   grandTotal,
 }: PivotTableProps) {
+  // 로컬 상태로 변경
   const [selectedCells, setSelectedCells] = useState<Set<string>>(new Set());
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState<{
@@ -73,9 +74,6 @@ export function PivotTable({
     col: string;
   } | null>(null);
   const [statisticType, setStatisticType] = useState<StatisticType>("sum");
-  const [activeContextCell, setActiveContextCell] = useState<string | null>(
-    null
-  );
 
   const copySelectedCellsAmount = async () => {
     const amounts: number[] = [];
@@ -91,7 +89,7 @@ export function PivotTable({
 
     try {
       await navigator.clipboard.writeText(formattedAmount);
-    } catch (err) {
+    } catch {
       const textArea = document.createElement("textarea");
       textArea.value = formattedAmount;
       document.body.appendChild(textArea);
@@ -233,8 +231,7 @@ export function PivotTable({
     }
   }, [data, selectedCells, statisticType]);
 
-  const renderDefaultCell = (cellId: string, cellData: CellData) => {
-    const isSelected = selectedCells.has(cellId);
+  const renderDefaultCell = (_cellId: string, cellData: CellData) => {
     if (cellData.count === 0 && cellData.amount === 0) {
       return <div className="text-sm text-center text-muted-foreground">-</div>;
     }
@@ -313,7 +310,7 @@ export function PivotTable({
         </div>
       </div>
       <div
-        className="rounded-md border"
+        className="rounded-md border overflow-hidden"
         onMouseUp={handleMouseUp}
         onMouseLeave={handleMouseUp}
       >
