@@ -192,7 +192,7 @@ export function CountryPieChart({ data }: CountryPieChartProps) {
                 <ChartTooltipContent
                   hideLabel
                   className="min-w-[160px]"
-                  formatter={(value: number, _name: string, item: any) => (
+                  formatter={(value, _name, item) => (
                     <div className="flex items-center gap-2">
                       <div
                         className="h-3 w-3 rounded-[2px]"
@@ -202,7 +202,7 @@ export function CountryPieChart({ data }: CountryPieChartProps) {
                       />
                       <span className="text-sm font-medium">
                         {item?.payload?.country}: {currencySymbol}
-                        {Number(value).toLocaleString()}
+                        {Number(value as number).toLocaleString()}
                       </span>
                     </div>
                   )}
