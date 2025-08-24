@@ -210,7 +210,7 @@ export default function AnalyticsPage() {
   };
 
   return (
-    <SidebarInset className="h-[calc(100dvh-1rem)] flex flex-col">
+    <SidebarInset className="h-[calc(100dvh-1rem)] flex flex-col overflow-hidden">
       <ProtectedRoute>
         <header className="flex h-16 shrink-0 items-center gap-2">
           <div className="flex items-center gap-2 px-4">
@@ -233,8 +233,8 @@ export default function AnalyticsPage() {
           </div>
         </header>
 
-        <div className="flex-1 overflow-y-auto">
-          <div className={`flex flex-col gap-4 p-4 pt-0 ${uploadedData ? '' : 'h-full'}`}>
+        <div className="flex-1 min-h-0 overflow-y-auto">
+          <div className={`flex flex-col gap-4 p-4 pt-0 ${uploadedData ? '' : 'h-full justify-center items-center'}`}>
             {/* 헤더 */}
             {uploadedData && (
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">

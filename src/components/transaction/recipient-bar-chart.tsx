@@ -89,9 +89,10 @@ export function RecipientBarChart({ data }: RecipientBarChartProps) {
 
       return {
         recipient:
-          item.name.length > 12
-            ? `${item.name.substring(0, 12)}...`
+          item.name.length > 18
+            ? `${item.name.substring(0, 18)}...`
             : item.name,
+        fullName: item.name, // 풀네임 저장
         amount: item.amount,
         count: item.count,
         fill: blueShades[index % blueShades.length],
@@ -134,7 +135,7 @@ export function RecipientBarChart({ data }: RecipientBarChartProps) {
             Top 10 recipients by remittance volume
           </CardDescription>
         </CardHeader>
-        <CardContent className="flex items-center justify-center h-[300px]">
+        <CardContent className="flex items-center justify-center h-[350px]">
           <div className="text-muted-foreground text-center">
             <p>No data to display.</p>
             <p className="text-sm mt-1">Please check completed transactions.</p>
@@ -152,14 +153,17 @@ export function RecipientBarChart({ data }: RecipientBarChartProps) {
           Top 10 recipients by remittance volume ({currency})
         </CardDescription>
       </CardHeader>
-      <CardContent>
-        <ChartContainer config={chartConfig}>
+      <CardContent className="h-[350px] p-0 pt-6 pr-6">
+        <ChartContainer config={chartConfig} className="h-full w-full">
           <BarChart
             accessibilityLayer
             data={chartData}
             layout="vertical"
             margin={{
-              left: 0,
+              top: 10,
+              right: 10,
+              bottom: 10,
+              left: 10,
             }}
           >
             <YAxis
@@ -168,7 +172,7 @@ export function RecipientBarChart({ data }: RecipientBarChartProps) {
               tickLine={false}
               tickMargin={10}
               axisLine={false}
-              width={80}
+              width={120}
               tick={{ fontSize: 11 }}
             />
             <XAxis dataKey="amount" type="number" hide />
@@ -177,19 +181,24 @@ export function RecipientBarChart({ data }: RecipientBarChartProps) {
               content={
                 <ChartTooltipContent
                   hideLabel
-                  className="min-w-[160px]"
+                  className="min-w-[200px]"
                   formatter={(value, _name, item) => (
-                    <div className="flex items-center gap-2">
-                      <div
-                        className="h-3 w-3 rounded-[2px]"
-                        style={{
-                          backgroundColor: item?.color || item?.payload?.fill,
-                        }}
-                      />
-                      <span className="text-sm">
-                        {currencySymbol}
-                        {Number(value as number).toLocaleString()}
-                      </span>
+                    <div className="space-y-1">
+                      <div className="font-medium text-sm">
+                        {item?.payload?.fullName || item?.payload?.recipient}
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <div
+                          className="h-3 w-3 rounded-[2px]"
+                          style={{
+                            backgroundColor: item?.color || item?.payload?.fill,
+                          }}
+                        />
+                        <span className="text-sm">
+                          {currencySymbol}
+                          {Number(value as number).toLocaleString()}
+                        </span>
+                      </div>
                     </div>
                   )}
                 />

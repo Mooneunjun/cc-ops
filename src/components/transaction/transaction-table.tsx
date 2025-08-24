@@ -284,7 +284,7 @@ export function TransactionTable({ data }: TransactionTableProps) {
                         currentPage * Number(itemsPerPage),
                         filteredData.length
                       )}건 표시`}
-                </p>
+                  </p>
                 <div className="flex items-center gap-2">
                   <Label htmlFor="items-per-page" className="text-sm">
                     페이지당:
@@ -360,8 +360,8 @@ export function TransactionTable({ data }: TransactionTableProps) {
                               {totalPages}
                             </PaginationLink>
                           </PaginationItem>
-                        </>
-                      )}
+                          </>
+                        )}
                       <PaginationItem>
                         <PaginationNext
                           onClick={() =>

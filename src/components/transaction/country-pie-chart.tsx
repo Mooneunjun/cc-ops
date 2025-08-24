@@ -162,7 +162,7 @@ export function CountryPieChart({ data }: CountryPieChartProps) {
           <CardTitle>Remittance Distribution by Country</CardTitle>
           <CardDescription>Remittance status by country</CardDescription>
         </CardHeader>
-        <CardContent className="flex-1 pb-0 flex items-center justify-center">
+        <CardContent className="h-[350px] p-0 pt-6 flex items-center justify-center">
           <div className="text-muted-foreground text-center">
             <p>No data to display.</p>
             <p className="text-sm mt-1">Please check completed transactions.</p>
@@ -180,11 +180,8 @@ export function CountryPieChart({ data }: CountryPieChartProps) {
           Remittance status by country ({currency})
         </CardDescription>
       </CardHeader>
-      <CardContent className="flex-1 pb-0">
-        <ChartContainer
-          config={chartConfig}
-          className="mx-auto aspect-square max-h-[300px]"
-        >
+      <CardContent className="h-[350px] p-0 pt-6">
+        <ChartContainer config={chartConfig} className="h-full w-full">
           <PieChart>
             <ChartTooltip
               cursor={false}
