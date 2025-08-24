@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useCallback, useRef, useEffect } from "react";
 import {
   Table,
   TableBody,
@@ -30,8 +30,20 @@ interface RecipientPivotProps {
 }
 
 export function RecipientPivot({ filteredData }: RecipientPivotProps) {
-  // 로컬 상태로 변경
+  // 모든 수취인 기본적으로 확장 상태
   const [expandedRecipients, setExpandedRecipients] = useState<Record<string, boolean>>({});
+  
+  // 모든 수취인을 기본적으로 확장 상태로 설정
+  React.useEffect(() => {
+    if (filteredData.length > 0) {
+      const recipients = [...new Set(filteredData.map(t => (t.reciFullName || "").trim()).filter(Boolean))];
+      const initialExpanded: Record<string, boolean> = {};
+      recipients.forEach(recipient => {
+        initialExpanded[recipient] = true;
+      });
+      setExpandedRecipients(initialExpanded);
+    }
+  }, [filteredData]);
   const [selectedCells, setSelectedCells] = useState<Set<string>>(new Set());
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState<{
@@ -55,14 +67,17 @@ export function RecipientPivot({ filteredData }: RecipientPivotProps) {
   const [activeContextCell, setActiveContextCell] = useState<string | null>(
     null
   );
+  
+  // 드래그 throttling을 위한 ref
+  const throttleRef = useRef<NodeJS.Timeout | null>(null);
 
-  // 로컬 토글 함수
-  const toggleRecipient = (recipient: string) => {
+  // 로컬 토글 함수 (memoized)
+  const toggleRecipient = useCallback((recipient: string) => {
     setExpandedRecipients(prev => ({
       ...prev,
       [recipient]: !prev[recipient]
     }));
-  };
+  }, []);
 
   // 선택된 셀들의 금액 복사 함수
   const copySelectedCellsAmount = async () => {
@@ -111,7 +126,7 @@ export function RecipientPivot({ filteredData }: RecipientPivotProps) {
   const getCellId = (recipient: string, year: number, month: number) =>
     `${recipient}-${year}-${month}`;
 
-  const handleCellClick = (
+  const handleCellClick = useCallback((
     recipient: string,
     year: number,
     month: number,
@@ -132,9 +147,9 @@ export function RecipientPivot({ filteredData }: RecipientPivotProps) {
       next.add(cellId);
     }
     setSelectedCells(next);
-  };
+  }, [didDrag, selectedCells]);
 
-  const handleCellMouseDown = (
+  const handleCellMouseDown = useCallback((
     recipient: string,
     year: number,
     month: number,
@@ -156,75 +171,31 @@ export function RecipientPivot({ filteredData }: RecipientPivotProps) {
       setSelectedCells(only);
       setAdditiveMode("none");
     }
-  };
+  }, [selectedCells]);
 
-  const handleCellMouseEnter = (
-    recipient: string,
-    year: number,
-    month: number
-  ) => {
-    if (!isDragging || !dragStart) return;
+  // handleCellMouseEnter는 useMemo 이후에 정의 (rowIndexMap, flatRows 접근 필요)
 
-    // flatRows에서 시작 행과 현재 행의 인덱스 찾기
-    const startRowIndex = flatRows.findIndex(
-      (row) =>
-        row.recipient === dragStart.recipient && row.year === dragStart.year
-    );
-    const currentRowIndex = flatRows.findIndex(
-      (row) => row.recipient === recipient && row.year === year
-    );
-
-    if (startRowIndex === -1 || currentRowIndex === -1) return;
-
-    // 행 범위와 월 범위 계산
-    const minRowIndex = Math.min(startRowIndex, currentRowIndex);
-    const maxRowIndex = Math.max(startRowIndex, currentRowIndex);
-    const minMonth = Math.min(dragStart.month, month);
-    const maxMonth = Math.max(dragStart.month, month);
-
-    const rectCells: string[] = [];
-
-    // 선택된 행 범위의 모든 셀 추가
-    for (let rowIndex = minRowIndex; rowIndex <= maxRowIndex; rowIndex++) {
-      const row = flatRows[rowIndex];
-      for (let m = minMonth; m <= maxMonth; m++) {
-        rectCells.push(getCellId(row.recipient, row.year, m));
-      }
+  const handleMouseUp = useCallback(() => {
+    if (throttleRef.current) {
+      clearTimeout(throttleRef.current);
+      throttleRef.current = null;
     }
-
-    let next: Set<string>;
-    if (isAdditiveDrag && baseSelectedCells) {
-      next = new Set(baseSelectedCells);
-      if (additiveMode === "add") {
-        for (const c of rectCells) next.add(c);
-      } else if (additiveMode === "remove") {
-        for (const c of rectCells) next.delete(c);
-      } else {
-        for (const c of rectCells) next.add(c);
-      }
-    } else {
-      next = new Set(rectCells);
-    }
-
-    if (
-      recipient !== dragStart.recipient ||
-      year !== dragStart.year ||
-      month !== dragStart.month
-    ) {
-      setDidDrag(true);
-    }
-    setDragCurrent({ recipient, year, month });
-    setSelectedCells(next);
-  };
-
-  const handleMouseUp = () => {
     setIsDragging(false);
     setIsAdditiveDrag(false);
     setDragStart(null);
     setBaseSelectedCells(null);
     setAdditiveMode("none");
     setDragCurrent(null);
-  };
+  }, []);
+  
+  // cleanup throttle on unmount
+  useEffect(() => {
+    return () => {
+      if (throttleRef.current) {
+        clearTimeout(throttleRef.current);
+      }
+    };
+  }, []);
 
   // 수취인-연도 행 구조와 월/연도/전체 합계, 건수 계산
   const {
@@ -234,6 +205,7 @@ export function RecipientPivot({ filteredData }: RecipientPivotProps) {
     monthTotalsCnt,
     grandTotalAmt,
     grandTotalCnt,
+    rowIndexMap,
   } = useMemo(() => {
     type MonthAgg = { amount: number; count: number };
     type YearRow = {
@@ -301,6 +273,13 @@ export function RecipientPivot({ filteredData }: RecipientPivotProps) {
       .sort((a, b) => a.recipient.localeCompare(b.recipient));
 
     const flatRows: YearRow[] = groups.flatMap((g) => g.rows);
+    
+    // 행 인덱스 맵 생성 (성능 최적화: O(1) 조회)
+    const rowIndexMap = new Map<string, number>();
+    flatRows.forEach((row, index) => {
+      rowIndexMap.set(`${row.recipient}-${row.year}`, index);
+    });
+    
     return {
       groups,
       flatRows,
@@ -308,6 +287,7 @@ export function RecipientPivot({ filteredData }: RecipientPivotProps) {
       monthTotalsCnt,
       grandTotalAmt,
       grandTotalCnt,
+      rowIndexMap,
     };
   }, [filteredData]);
 
@@ -356,6 +336,65 @@ export function RecipientPivot({ filteredData }: RecipientPivotProps) {
         return 0;
     }
   }, [groups, selectedCells, statisticType]);
+
+  // handleCellMouseEnter 정의 (rowIndexMap, flatRows 접근 가능)
+  const handleCellMouseEnter = useCallback((
+    recipient: string,
+    year: number,
+    month: number
+  ) => {
+    if (!isDragging || !dragStart) return;
+
+    // throttling 적용 (16ms = ~60fps)
+    if (throttleRef.current) clearTimeout(throttleRef.current);
+    throttleRef.current = setTimeout(() => {
+      // rowIndexMap을 사용한 O(1) 조회 (성능 최적화)
+      const startRowIndex = rowIndexMap.get(`${dragStart.recipient}-${dragStart.year}`) ?? -1;
+      const currentRowIndex = rowIndexMap.get(`${recipient}-${year}`) ?? -1;
+
+      if (startRowIndex === -1 || currentRowIndex === -1) return;
+
+      // 행 범위와 월 범위 계산
+      const minRowIndex = Math.min(startRowIndex, currentRowIndex);
+      const maxRowIndex = Math.max(startRowIndex, currentRowIndex);
+      const minMonth = Math.min(dragStart.month, month);
+      const maxMonth = Math.max(dragStart.month, month);
+
+      const rectCells: string[] = [];
+
+      // 선택된 행 범위의 모든 셀 추가
+      for (let rowIndex = minRowIndex; rowIndex <= maxRowIndex; rowIndex++) {
+        const row = flatRows[rowIndex];
+        for (let m = minMonth; m <= maxMonth; m++) {
+          rectCells.push(getCellId(row.recipient, row.year, m));
+        }
+      }
+
+      let next: Set<string>;
+      if (isAdditiveDrag && baseSelectedCells) {
+        next = new Set(baseSelectedCells);
+        if (additiveMode === "add") {
+          for (const c of rectCells) next.add(c);
+        } else if (additiveMode === "remove") {
+          for (const c of rectCells) next.delete(c);
+        } else {
+          for (const c of rectCells) next.add(c);
+        }
+      } else {
+        next = new Set(rectCells);
+      }
+
+      if (
+        recipient !== dragStart.recipient ||
+        year !== dragStart.year ||
+        month !== dragStart.month
+      ) {
+        setDidDrag(true);
+      }
+      setDragCurrent({ recipient, year, month });
+      setSelectedCells(next);
+    }, 16);
+  }, [isDragging, dragStart, isAdditiveDrag, baseSelectedCells, additiveMode, rowIndexMap, flatRows]);
 
   return (
     <div className="space-y-2">
@@ -416,21 +455,21 @@ export function RecipientPivot({ filteredData }: RecipientPivotProps) {
           <Table className="min-w-max whitespace-nowrap [&_tr]:border-b-0 select-none">
             <TableHeader>
               <TableRow>
-                <TableHead className="text-center h-12 w-32 border-r border-dashed border-gray-300 bg-muted/70">
+                <TableHead className="text-center h-12 w-32 border-r border-b border-dashed border-gray-300 bg-muted">
                   수취인
                 </TableHead>
-                <TableHead className="text-center h-12 w-20 border-r border-dashed border-gray-300 bg-muted/70">
+                <TableHead className="text-center h-12 w-20 border-r border-b border-dashed border-gray-300 bg-muted">
                   연도
                 </TableHead>
                 {Array.from({ length: 12 }, (_, i) => i + 1).map((m) => (
                   <TableHead
                     key={m}
-                    className="text-center h-12 w-20 border-r border-dashed border-gray-300 bg-slate-50"
+                    className="text-center h-12 w-20 border-r border-b border-dashed border-gray-300 bg-slate-100"
                   >
                     {m}월
                   </TableHead>
                 ))}
-                <TableHead className="text-center h-12 w-24 bg-slate-50">
+                <TableHead className="text-center h-12 w-24 border-b border-dashed border-gray-300 bg-slate-100">
                   총계
                 </TableHead>
               </TableRow>
@@ -451,7 +490,7 @@ export function RecipientPivot({ filteredData }: RecipientPivotProps) {
                           {localIdx === 0 && (
                             <TableCell
                               rowSpan={span}
-                              className="align-middle text-center w-32 border-r border-dashed border-gray-300 bg-muted/70"
+                              className="align-middle text-center w-32 border-r border-b border-dashed border-gray-300 bg-muted"
                             >
                               <div className="flex items-center justify-center gap-1">
                                 <button
@@ -492,7 +531,7 @@ export function RecipientPivot({ filteredData }: RecipientPivotProps) {
                               </div>
                             </TableCell>
                           )}
-                          <TableCell className="font-medium bg-muted/70 text-center w-20 border-r border-dashed border-gray-300">
+                          <TableCell className="font-medium bg-muted text-center w-20 border-r border-b border-dashed border-gray-300">
                             {row.year}
                           </TableCell>
                           {Array.from({ length: 12 }, (_, i) => i + 1).map(
@@ -507,46 +546,18 @@ export function RecipientPivot({ filteredData }: RecipientPivotProps) {
                                 if (!isDragging || !dragStart || !dragCurrent)
                                   return false;
 
-                                // flatRows에서 시작 행, 현재 행, 이 행의 인덱스 찾기
-                                const startRowIndex = flatRows.findIndex(
-                                  (r) =>
-                                    r.recipient === dragStart.recipient &&
-                                    r.year === dragStart.year
-                                );
-                                const currentRowIndex = flatRows.findIndex(
-                                  (r) =>
-                                    r.recipient === dragCurrent.recipient &&
-                                    r.year === dragCurrent.year
-                                );
-                                const thisRowIndex = flatRows.findIndex(
-                                  (r) =>
-                                    r.recipient === g.recipient &&
-                                    r.year === row.year
-                                );
+                                // rowIndexMap 사용한 O(1) 조회
+                                const startRowIndex = rowIndexMap.get(`${dragStart.recipient}-${dragStart.year}`) ?? -1;
+                                const currentRowIndex = rowIndexMap.get(`${dragCurrent.recipient}-${dragCurrent.year}`) ?? -1;
+                                const thisRowIndex = rowIndexMap.get(`${g.recipient}-${row.year}`) ?? -1;
 
-                                if (
-                                  startRowIndex === -1 ||
-                                  currentRowIndex === -1 ||
-                                  thisRowIndex === -1
-                                )
+                                if (startRowIndex === -1 || currentRowIndex === -1 || thisRowIndex === -1)
                                   return false;
 
-                                const minRowIndex = Math.min(
-                                  startRowIndex,
-                                  currentRowIndex
-                                );
-                                const maxRowIndex = Math.max(
-                                  startRowIndex,
-                                  currentRowIndex
-                                );
-                                const minM = Math.min(
-                                  dragStart.month,
-                                  dragCurrent.month
-                                );
-                                const maxM = Math.max(
-                                  dragStart.month,
-                                  dragCurrent.month
-                                );
+                                const minRowIndex = Math.min(startRowIndex, currentRowIndex);
+                                const maxRowIndex = Math.max(startRowIndex, currentRowIndex);
+                                const minM = Math.min(dragStart.month, dragCurrent.month);
+                                const maxM = Math.max(dragStart.month, dragCurrent.month);
 
                                 return (
                                   thisRowIndex >= minRowIndex &&
@@ -559,7 +570,7 @@ export function RecipientPivot({ filteredData }: RecipientPivotProps) {
                                 <ContextMenu key={m}>
                                   <ContextMenuTrigger asChild>
                                     <TableCell
-                                      className={`relative text-center w-20 border-r border-dashed border-gray-300 cursor-pointer transition-colors hover:bg-gray-100 ${
+                                      className={`relative text-center w-20 border-r border-b border-dashed border-gray-300 cursor-pointer transition-colors hover:bg-gray-100 ${
                                         isSelected
                                           ? "bg-blue-100 hover:bg-blue-200"
                                           : ""
@@ -592,33 +603,21 @@ export function RecipientPivot({ filteredData }: RecipientPivotProps) {
                                       {isSelected &&
                                         (!isDragging || !inDragRect) &&
                                         (() => {
-                                          const topSel = selectedCells.has(
-                                            getCellId(
-                                              g.recipient,
-                                              row.year - 1,
-                                              m
-                                            )
+                                          // 인접한 선택된 셀들 확인해서 외곽 테두리만 표시
+                                          const topRowIndex = rowIndexMap.get(`${g.recipient}-${row.year - 1}`) ?? -1;
+                                          const bottomRowIndex = rowIndexMap.get(`${g.recipient}-${row.year + 1}`) ?? -1;
+                                          
+                                          const topSel = topRowIndex !== -1 && selectedCells.has(
+                                            getCellId(g.recipient, row.year - 1, m)
                                           );
-                                          const bottomSel = selectedCells.has(
-                                            getCellId(
-                                              g.recipient,
-                                              row.year + 1,
-                                              m
-                                            )
+                                          const bottomSel = bottomRowIndex !== -1 && selectedCells.has(
+                                            getCellId(g.recipient, row.year + 1, m)
                                           );
                                           const leftSel = selectedCells.has(
-                                            getCellId(
-                                              g.recipient,
-                                              row.year,
-                                              m - 1
-                                            )
+                                            getCellId(g.recipient, row.year, m - 1)
                                           );
                                           const rightSel = selectedCells.has(
-                                            getCellId(
-                                              g.recipient,
-                                              row.year,
-                                              m + 1
-                                            )
+                                            getCellId(g.recipient, row.year, m + 1)
                                           );
                                           return (
                                             <>
@@ -641,48 +640,17 @@ export function RecipientPivot({ filteredData }: RecipientPivotProps) {
                                       {inDragRect &&
                                         isDragging &&
                                         (() => {
-                                          const startRowIndex =
-                                            flatRows.findIndex(
-                                              (r) =>
-                                                r.recipient ===
-                                                  dragStart!.recipient &&
-                                                r.year === dragStart!.year
-                                            );
-                                          const currentRowIndex =
-                                            flatRows.findIndex(
-                                              (r) =>
-                                                r.recipient ===
-                                                  dragCurrent!.recipient &&
-                                                r.year === dragCurrent!.year
-                                            );
-                                          const thisRowIndex =
-                                            flatRows.findIndex(
-                                              (r) =>
-                                                r.recipient === g.recipient &&
-                                                r.year === row.year
-                                            );
+                                          const startRowIndex = rowIndexMap.get(`${dragStart!.recipient}-${dragStart!.year}`) ?? -1;
+                                          const currentRowIndex = rowIndexMap.get(`${dragCurrent!.recipient}-${dragCurrent!.year}`) ?? -1;
+                                          const thisRowIndex = rowIndexMap.get(`${g.recipient}-${row.year}`) ?? -1;
 
-                                          const minRowIndex = Math.min(
-                                            startRowIndex,
-                                            currentRowIndex
-                                          );
-                                          const maxRowIndex = Math.max(
-                                            startRowIndex,
-                                            currentRowIndex
-                                          );
-                                          const minM = Math.min(
-                                            dragStart!.month,
-                                            dragCurrent!.month
-                                          );
-                                          const maxM = Math.max(
-                                            dragStart!.month,
-                                            dragCurrent!.month
-                                          );
+                                          const minRowIndex = Math.min(startRowIndex, currentRowIndex);
+                                          const maxRowIndex = Math.max(startRowIndex, currentRowIndex);
+                                          const minM = Math.min(dragStart!.month, dragCurrent!.month);
+                                          const maxM = Math.max(dragStart!.month, dragCurrent!.month);
 
-                                          const isTopEdge =
-                                            thisRowIndex === minRowIndex;
-                                          const isBottomEdge =
-                                            thisRowIndex === maxRowIndex;
+                                          const isTopEdge = thisRowIndex === minRowIndex;
+                                          const isBottomEdge = thisRowIndex === maxRowIndex;
                                           const isLeftEdge = m === minM;
                                           const isRightEdge = m === maxM;
 
@@ -752,7 +720,7 @@ export function RecipientPivot({ filteredData }: RecipientPivotProps) {
                           >
                             <ContextMenuTrigger asChild>
                               <TableCell
-                                className={`text-center w-24 cursor-pointer transition-colors ${
+                                className={`text-center w-24 border-b border-dashed border-gray-300 cursor-pointer transition-colors ${
                                   activeContextCell ===
                                   `row-${g.recipient}-${row.year}-total`
                                     ? "bg-green-100"
@@ -830,9 +798,9 @@ export function RecipientPivot({ filteredData }: RecipientPivotProps) {
                     rowsOut.push(
                       <TableRow
                         key={`${g.recipient}__total`}
-                        className="bg-muted/70"
+                        className="bg-muted"
                       >
-                        <TableCell className="font-medium text-center w-20 border-r border-dashed border-gray-300 !bg-muted/70">
+                        <TableCell className="font-medium text-center w-20 border-r border-b border-dashed border-gray-300 !bg-muted">
                           총계
                         </TableCell>
                         {recTotalsByMonth.map(({ m, cnt, amt }) => (
@@ -850,7 +818,7 @@ export function RecipientPivot({ filteredData }: RecipientPivotProps) {
                           >
                             <ContextMenuTrigger asChild>
                               <TableCell
-                                className={`text-center w-20 border-r border-dashed border-gray-300 cursor-pointer transition-colors bg-slate-100 ${
+                                className={`text-center w-20 border-r border-b border-dashed border-gray-300 cursor-pointer transition-colors bg-slate-200 ${
                                   activeContextCell ===
                                   `expanded-${g.recipient}-${m}`
                                     ? "bg-green-100"
@@ -910,7 +878,7 @@ export function RecipientPivot({ filteredData }: RecipientPivotProps) {
                         >
                           <ContextMenuTrigger asChild>
                             <TableCell
-                              className={`text-center w-24 cursor-pointer transition-colors bg-slate-100 ${
+                              className={`text-center w-24 border-b border-dashed border-gray-300 cursor-pointer transition-colors bg-slate-200 ${
                                 activeContextCell ===
                                 `expanded-${g.recipient}-total`
                                   ? "bg-green-100"
@@ -984,9 +952,9 @@ export function RecipientPivot({ filteredData }: RecipientPivotProps) {
                     rowsOut.push(
                       <TableRow
                         key={`${g.recipient}__collapsed`}
-                        className="bg-muted/70"
+                        className="bg-muted"
                       >
-                        <TableCell className="text-center w-32 border-r border-dashed border-gray-300 bg-muted/70">
+                        <TableCell className="text-center w-32 border-r border-b border-dashed border-gray-300 bg-muted">
                           <div className="flex items-center justify-center gap-1">
                             <button
                               onClick={() => toggleRecipient(g.recipient)}
@@ -1025,13 +993,13 @@ export function RecipientPivot({ filteredData }: RecipientPivotProps) {
                             <span className="truncate">{g.recipient}</span>
                           </div>
                         </TableCell>
-                        <TableCell className="font-medium text-center w-20 border-r border-dashed border-gray-300 !bg-muted/70">
+                        <TableCell className="font-medium text-center w-20 border-r border-b border-dashed border-gray-300 !bg-muted">
                           총계
                         </TableCell>
                         {recTotalsByMonth.map(({ m, cnt, amt }) => (
                           <ContextMenu key={m}>
                             <ContextMenuTrigger asChild>
-                              <TableCell className="text-center w-20 border-r border-dashed border-gray-300 cursor-pointer transition-colors bg-slate-100">
+                              <TableCell className="text-center w-20 border-r border-b border-dashed border-gray-300 cursor-pointer transition-colors bg-slate-200">
                                 {cnt === 0 && amt === 0 ? (
                                   <div className="text-sm text-center text-muted-foreground">
                                     -
@@ -1074,7 +1042,7 @@ export function RecipientPivot({ filteredData }: RecipientPivotProps) {
                         ))}
                         <ContextMenu>
                           <ContextMenuTrigger asChild>
-                            <TableCell className="text-center w-24 cursor-pointer transition-colors bg-slate-100">
+                            <TableCell className="text-center w-24 border-b border-dashed border-gray-300 cursor-pointer transition-colors bg-slate-200">
                               {recTotalCnt === 0 && recTotalAmt === 0 ? (
                                 <span>-</span>
                               ) : (
@@ -1131,12 +1099,12 @@ export function RecipientPivot({ filteredData }: RecipientPivotProps) {
               })()}
               {/* 총계 행 */}
               <TableRow
-                className="bg-slate-50 hover:bg-slate-50"
+                className="bg-slate-100 hover:bg-slate-100"
                 style={{ borderTop: "2px solid #9CA3AF" }}
               >
                 <TableCell
                   colSpan={2}
-                  className="font-bold text-center border-r border-dashed border-gray-300 bg-muted/70"
+                  className="font-bold text-center border-r border-b border-dashed border-gray-300 bg-muted"
                 >
                   전체 총계
                 </TableCell>
@@ -1153,7 +1121,7 @@ export function RecipientPivot({ filteredData }: RecipientPivotProps) {
                   >
                     <ContextMenuTrigger asChild>
                       <TableCell
-                        className={`text-center w-20 border-r border-dashed border-gray-300 cursor-pointer transition-colors ${
+                        className={`text-center w-20 border-r border-b border-dashed border-gray-300 cursor-pointer transition-colors ${
                           activeContextCell === `grand-total-${m}`
                             ? "bg-green-100"
                             : ""
@@ -1211,7 +1179,7 @@ export function RecipientPivot({ filteredData }: RecipientPivotProps) {
                 >
                   <ContextMenuTrigger asChild>
                     <TableCell
-                      className={`text-center w-24 cursor-pointer transition-colors ${
+                      className={`text-center w-24 border-b border-dashed border-gray-300 cursor-pointer transition-colors ${
                         activeContextCell === "grand-total-total"
                           ? "bg-green-100"
                           : ""

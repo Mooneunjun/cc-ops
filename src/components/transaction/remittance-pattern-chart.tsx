@@ -144,8 +144,8 @@ export function RemittancePatternChart({ data }: RemittancePatternChartProps) {
 
   return (
     <Card className="p-0">
-      <CardHeader className="flex flex-col items-stretch border-b !p-0 sm:flex-row">
-        <div className="flex flex-1 flex-col justify-center gap-1 px-6 pb-3 sm:pb-0">
+      <CardHeader className="flex flex-col items-stretch border-b !p-0 xl:flex-row overflow-hidden rounded-t-[inherit] gap-0">
+        <div className="flex flex-1 flex-col justify-center gap-1 px-6 py-6 xl:py-0 xl:pb-0 min-w-[300px] border-b border-border xl:border-b-0 xl:border-r xl:border-border">
           <CardTitle>Remittance Pattern Analysis</CardTitle>
           <CardDescription>
             Monthly remittance trends (
@@ -165,23 +165,23 @@ export function RemittancePatternChart({ data }: RemittancePatternChartProps) {
             based, {currency})
           </CardDescription>
         </div>
-        <div className="flex flex-wrap">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-5 2xl:grid-cols-7 gap-x-0 gap-y-px bg-border/30">
           <button
             data-active={activeYear === null}
-            className="data-[active=true]:bg-muted/50 flex flex-1 flex-col justify-center gap-1 border-t px-6 py-4 text-left sm:border-t-0 sm:border-l sm:px-8 sm:py-6 hover:bg-muted/30 transition-colors"
+            className="data-[active=true]:bg-muted/50 flex flex-col justify-center gap-1 bg-card px-4 py-4 text-left sm:px-6 sm:py-6 hover:bg-muted/30 transition-colors col-span-2"
             onClick={() => setActiveYear(null)}
           >
             <span className="text-muted-foreground text-xs">Total Amount</span>
-            <span className="text-base leading-none font-bold sm:text-lg">
+            <span className="text-base leading-none font-bold sm:text-lg truncate">
               {currencySymbol}
               {grandTotal.toLocaleString()}
             </span>
           </button>
-          {years.map((year, index) => (
+          {years.map((year) => (
             <button
               key={year}
               data-active={activeYear === year}
-              className="data-[active=true]:bg-muted/50 flex flex-col justify-center gap-1 border-t px-6 py-4 text-left even:border-l sm:border-t-0 sm:border-l sm:px-6 sm:py-6 min-w-[160px] w-[160px] hover:bg-muted/30 transition-colors"
+              className="data-[active=true]:bg-muted/50 flex flex-col justify-center gap-1 bg-card px-4 py-4 text-left sm:px-4 sm:py-6 hover:bg-muted/30 transition-colors"
               onClick={() => setActiveYear(year)}
             >
               <span className="text-muted-foreground text-xs">{year}</span>
