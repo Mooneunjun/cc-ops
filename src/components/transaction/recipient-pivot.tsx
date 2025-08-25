@@ -490,7 +490,7 @@ export function RecipientPivot({ filteredData }: RecipientPivotProps) {
                           {localIdx === 0 && (
                             <TableCell
                               rowSpan={span}
-                              className="align-middle text-center w-32 border-r border-b border-dashed border-gray-300 bg-muted"
+                              className="align-middle text-center w-32 border-r border-dashed border-gray-300 bg-muted"
                             >
                               <div className="flex items-center justify-center gap-1">
                                 <button
@@ -604,14 +604,15 @@ export function RecipientPivot({ filteredData }: RecipientPivotProps) {
                                         (!isDragging || !inDragRect) &&
                                         (() => {
                                           // 인접한 선택된 셀들 확인해서 외곽 테두리만 표시
-                                          const topRowIndex = rowIndexMap.get(`${g.recipient}-${row.year - 1}`) ?? -1;
-                                          const bottomRowIndex = rowIndexMap.get(`${g.recipient}-${row.year + 1}`) ?? -1;
+                                          const currentRowIndex = rowIndexMap.get(`${g.recipient}-${row.year}`) ?? -1;
+                                          const topRow = currentRowIndex > 0 ? flatRows[currentRowIndex - 1] : null;
+                                          const bottomRow = currentRowIndex < flatRows.length - 1 ? flatRows[currentRowIndex + 1] : null;
                                           
-                                          const topSel = topRowIndex !== -1 && selectedCells.has(
-                                            getCellId(g.recipient, row.year - 1, m)
+                                          const topSel = topRow && topRow.recipient === g.recipient && selectedCells.has(
+                                            getCellId(topRow.recipient, topRow.year, m)
                                           );
-                                          const bottomSel = bottomRowIndex !== -1 && selectedCells.has(
-                                            getCellId(g.recipient, row.year + 1, m)
+                                          const bottomSel = bottomRow && bottomRow.recipient === g.recipient && selectedCells.has(
+                                            getCellId(bottomRow.recipient, bottomRow.year, m)
                                           );
                                           const leftSel = selectedCells.has(
                                             getCellId(g.recipient, row.year, m - 1)
@@ -800,7 +801,7 @@ export function RecipientPivot({ filteredData }: RecipientPivotProps) {
                         key={`${g.recipient}__total`}
                         className="bg-muted"
                       >
-                        <TableCell className="font-medium text-center w-20 border-r border-b border-dashed border-gray-300 !bg-muted">
+                        <TableCell className="font-medium text-center w-20 border-r border-dashed border-gray-300 !bg-muted">
                           총계
                         </TableCell>
                         {recTotalsByMonth.map(({ m, cnt, amt }) => (
@@ -818,7 +819,7 @@ export function RecipientPivot({ filteredData }: RecipientPivotProps) {
                           >
                             <ContextMenuTrigger asChild>
                               <TableCell
-                                className={`text-center w-20 border-r border-b border-dashed border-gray-300 cursor-pointer transition-colors bg-slate-200 ${
+                                className={`text-center w-20 border-r border-dashed border-gray-300 cursor-pointer transition-colors bg-slate-200 ${
                                   activeContextCell ===
                                   `expanded-${g.recipient}-${m}`
                                     ? "bg-green-100"
@@ -878,7 +879,7 @@ export function RecipientPivot({ filteredData }: RecipientPivotProps) {
                         >
                           <ContextMenuTrigger asChild>
                             <TableCell
-                              className={`text-center w-24 border-b border-dashed border-gray-300 cursor-pointer transition-colors bg-slate-200 ${
+                              className={`text-center w-24 cursor-pointer transition-colors bg-slate-200 ${
                                 activeContextCell ===
                                 `expanded-${g.recipient}-total`
                                   ? "bg-green-100"
@@ -993,13 +994,13 @@ export function RecipientPivot({ filteredData }: RecipientPivotProps) {
                             <span className="truncate">{g.recipient}</span>
                           </div>
                         </TableCell>
-                        <TableCell className="font-medium text-center w-20 border-r border-b border-dashed border-gray-300 !bg-muted">
+                        <TableCell className="font-medium text-center w-20 border-r border-dashed border-gray-300 !bg-muted">
                           총계
                         </TableCell>
                         {recTotalsByMonth.map(({ m, cnt, amt }) => (
                           <ContextMenu key={m}>
                             <ContextMenuTrigger asChild>
-                              <TableCell className="text-center w-20 border-r border-b border-dashed border-gray-300 cursor-pointer transition-colors bg-slate-200">
+                              <TableCell className="text-center w-20 border-r border-dashed border-gray-300 cursor-pointer transition-colors bg-slate-200">
                                 {cnt === 0 && amt === 0 ? (
                                   <div className="text-sm text-center text-muted-foreground">
                                     -
@@ -1042,7 +1043,7 @@ export function RecipientPivot({ filteredData }: RecipientPivotProps) {
                         ))}
                         <ContextMenu>
                           <ContextMenuTrigger asChild>
-                            <TableCell className="text-center w-24 border-b border-dashed border-gray-300 cursor-pointer transition-colors bg-slate-200">
+                            <TableCell className="text-center w-24 cursor-pointer transition-colors bg-slate-200">
                               {recTotalCnt === 0 && recTotalAmt === 0 ? (
                                 <span>-</span>
                               ) : (
@@ -1089,7 +1090,7 @@ export function RecipientPivot({ filteredData }: RecipientPivotProps) {
                     rowsOut.push(
                       <TableRow key={`sep-${g.recipient}`}>
                         <TableCell colSpan={15} className="p-0">
-                          <div className="h-px border-t border-gray-300" />
+                          <div className="h-px bg-gray-300" />
                         </TableCell>
                       </TableRow>
                     );
@@ -1104,7 +1105,7 @@ export function RecipientPivot({ filteredData }: RecipientPivotProps) {
               >
                 <TableCell
                   colSpan={2}
-                  className="font-bold text-center border-r border-b border-dashed border-gray-300 bg-muted"
+                  className="font-bold text-center border-r border-dashed border-gray-300 bg-muted"
                 >
                   전체 총계
                 </TableCell>
@@ -1121,7 +1122,7 @@ export function RecipientPivot({ filteredData }: RecipientPivotProps) {
                   >
                     <ContextMenuTrigger asChild>
                       <TableCell
-                        className={`text-center w-20 border-r border-b border-dashed border-gray-300 cursor-pointer transition-colors ${
+                        className={`text-center w-20 border-r border-dashed border-gray-300 cursor-pointer transition-colors ${
                           activeContextCell === `grand-total-${m}`
                             ? "bg-green-100"
                             : ""
@@ -1179,7 +1180,7 @@ export function RecipientPivot({ filteredData }: RecipientPivotProps) {
                 >
                   <ContextMenuTrigger asChild>
                     <TableCell
-                      className={`text-center w-24 border-b border-dashed border-gray-300 cursor-pointer transition-colors ${
+                      className={`text-center w-24 cursor-pointer transition-colors ${
                         activeContextCell === "grand-total-total"
                           ? "bg-green-100"
                           : ""

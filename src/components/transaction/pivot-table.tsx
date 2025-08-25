@@ -611,7 +611,7 @@ export function PivotTable({
                     }}
                   >
                     <ContextMenuTrigger asChild>
-                      <TableCell className={`font-bold text-center border-r border-b border-dashed border-gray-300 bg-muted cursor-pointer transition-colors ${
+                      <TableCell className={`font-bold text-center border-r border-dashed border-gray-300 bg-muted cursor-pointer transition-colors ${
                         activeContextCell === "total-label" ? "bg-green-100" : ""
                       }`}>
                         총계
@@ -639,7 +639,7 @@ export function PivotTable({
                         }}
                       >
                         <ContextMenuTrigger asChild>
-                          <TableCell className={`text-center w-20 border-r border-b border-dashed border-gray-300 cursor-pointer transition-colors bg-slate-100 ${
+                          <TableCell className={`text-center w-20 border-r border-dashed border-gray-300 cursor-pointer transition-colors bg-slate-100 ${
                             activeContextCell === `total-${col}` ? "bg-green-100" : ""
                           }`}>
                             {renderCell
@@ -669,7 +669,7 @@ export function PivotTable({
                       }}
                     >
                       <ContextMenuTrigger asChild>
-                        <TableCell className={`text-center w-24 border-b border-dashed border-gray-300 cursor-pointer transition-colors bg-slate-100 ${
+                        <TableCell className={`text-center w-24 cursor-pointer transition-colors bg-slate-100 ${
                           activeContextCell === "grand-total" ? "bg-green-100" : ""
                         }`}>
                           {renderCell
