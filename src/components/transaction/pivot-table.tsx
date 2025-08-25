@@ -332,9 +332,30 @@ export function PivotTable({
           <Table className="min-w-max whitespace-nowrap [&_tr]:border-b-0 select-none">
             <TableHeader>
               <TableRow>
-                <TableHead className="text-center h-12 w-20 border-r border-b border-dashed border-gray-300 bg-muted">
-                  <div className="text-s ">금액 / 건수</div>
-                </TableHead>
+                <ContextMenu
+                  onOpenChange={(open) => {
+                    if (open) {
+                      setActiveContextCell("amount-count-header");
+                    } else {
+                      setActiveContextCell(null);
+                    }
+                  }}
+                >
+                  <ContextMenuTrigger asChild>
+                    <TableHead className={`text-center h-12 w-20 border-r border-b border-dashed border-gray-300 bg-muted cursor-pointer transition-colors ${
+                      activeContextCell === "amount-count-header" ? "bg-green-100" : ""
+                    }`}>
+                      <div className="text-s ">금액 / 건수</div>
+                    </TableHead>
+                  </ContextMenuTrigger>
+                  <ContextMenuContent>
+                    <ContextMenuItem
+                      onClick={() => copyText("금액 / 건수")}
+                    >
+                      복사
+                    </ContextMenuItem>
+                  </ContextMenuContent>
+                </ContextMenu>
                 {headers.map((header, idx) => (
                   <ContextMenu
                     key={idx}
@@ -365,9 +386,30 @@ export function PivotTable({
                   </ContextMenu>
                 ))}
                 {rowTotals && (
-                  <TableHead className="text-center h-12 w-24 border-b border-dashed border-gray-300 bg-slate-100">
-                    총계
-                  </TableHead>
+                  <ContextMenu
+                    onOpenChange={(open) => {
+                      if (open) {
+                        setActiveContextCell("total-header");
+                      } else {
+                        setActiveContextCell(null);
+                      }
+                    }}
+                  >
+                    <ContextMenuTrigger asChild>
+                      <TableHead className={`text-center h-12 w-24 border-b border-dashed border-gray-300 bg-slate-100 cursor-pointer transition-colors ${
+                        activeContextCell === "total-header" ? "bg-green-100" : ""
+                      }`}>
+                        총계
+                      </TableHead>
+                    </ContextMenuTrigger>
+                    <ContextMenuContent>
+                      <ContextMenuItem
+                        onClick={() => copyText("총계")}
+                      >
+                        복사
+                      </ContextMenuItem>
+                    </ContextMenuContent>
+                  </ContextMenu>
                 )}
               </TableRow>
             </TableHeader>
@@ -611,7 +653,7 @@ export function PivotTable({
                     }}
                   >
                     <ContextMenuTrigger asChild>
-                      <TableCell className={`font-bold text-center border-r border-b border-dashed border-gray-300 bg-muted cursor-pointer transition-colors ${
+                      <TableCell className={`font-bold text-center border-r border-dashed border-gray-300 bg-muted cursor-pointer transition-colors ${
                         activeContextCell === "total-label" ? "bg-green-100" : ""
                       }`}>
                         총계
@@ -639,7 +681,7 @@ export function PivotTable({
                         }}
                       >
                         <ContextMenuTrigger asChild>
-                          <TableCell className={`text-center w-20 border-r border-b border-dashed border-gray-300 cursor-pointer transition-colors bg-slate-100 ${
+                          <TableCell className={`text-center w-20 border-r border-dashed border-gray-300 cursor-pointer transition-colors bg-slate-100 ${
                             activeContextCell === `total-${col}` ? "bg-green-100" : ""
                           }`}>
                             {renderCell
@@ -669,7 +711,7 @@ export function PivotTable({
                       }}
                     >
                       <ContextMenuTrigger asChild>
-                        <TableCell className={`text-center w-24 border-b border-dashed border-gray-300 cursor-pointer transition-colors bg-slate-100 ${
+                        <TableCell className={`text-center w-24 cursor-pointer transition-colors bg-slate-100 ${
                           activeContextCell === "grand-total" ? "bg-green-100" : ""
                         }`}>
                           {renderCell

@@ -121,6 +121,19 @@ export function RecipientPivot({ filteredData }: RecipientPivotProps) {
     }
   };
 
+  const copyText = async (text: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+    } catch {
+      // fallback for older browsers
+      const textArea = document.createElement("textarea");
+      textArea.value = text;
+      document.body.appendChild(textArea);
+      textArea.select();
+      document.execCommand("copy");
+      document.body.removeChild(textArea);
+    }
+  };
 
   // 수취인별 셀 ID 생성 (recipient-year-month 형식)
   const getCellId = (recipient: string, year: number, month: number) =>
@@ -455,23 +468,105 @@ export function RecipientPivot({ filteredData }: RecipientPivotProps) {
           <Table className="min-w-max whitespace-nowrap [&_tr]:border-b-0 select-none">
             <TableHeader>
               <TableRow>
-                <TableHead className="text-center h-12 w-32 border-r border-b border-dashed border-gray-300 bg-muted">
-                  수취인
-                </TableHead>
-                <TableHead className="text-center h-12 w-20 border-r border-b border-dashed border-gray-300 bg-muted">
-                  연도
-                </TableHead>
+                <ContextMenu
+                  onOpenChange={(open) => {
+                    if (open) {
+                      setActiveContextCell("recipient-header");
+                    } else {
+                      setActiveContextCell(null);
+                    }
+                  }}
+                >
+                  <ContextMenuTrigger asChild>
+                    <TableHead className={`text-center h-12 w-32 border-r border-b border-dashed border-gray-300 bg-muted cursor-pointer transition-colors ${
+                      activeContextCell === "recipient-header" ? "bg-green-100" : ""
+                    }`}>
+                      수취인
+                    </TableHead>
+                  </ContextMenuTrigger>
+                  <ContextMenuContent>
+                    <ContextMenuItem
+                      onClick={async () => await copyText("수취인")}
+                    >
+                      복사
+                    </ContextMenuItem>
+                  </ContextMenuContent>
+                </ContextMenu>
+                <ContextMenu
+                  onOpenChange={(open) => {
+                    if (open) {
+                      setActiveContextCell("year-header");
+                    } else {
+                      setActiveContextCell(null);
+                    }
+                  }}
+                >
+                  <ContextMenuTrigger asChild>
+                    <TableHead className={`text-center h-12 w-20 border-r border-b border-dashed border-gray-300 bg-muted cursor-pointer transition-colors ${
+                      activeContextCell === "year-header" ? "bg-green-100" : ""
+                    }`}>
+                      연도
+                    </TableHead>
+                  </ContextMenuTrigger>
+                  <ContextMenuContent>
+                    <ContextMenuItem
+                      onClick={async () => await copyText("연도")}
+                    >
+                      복사
+                    </ContextMenuItem>
+                  </ContextMenuContent>
+                </ContextMenu>
                 {Array.from({ length: 12 }, (_, i) => i + 1).map((m) => (
-                  <TableHead
+                  <ContextMenu
                     key={m}
-                    className="text-center h-12 w-20 border-r border-b border-dashed border-gray-300 bg-slate-100"
+                    onOpenChange={(open) => {
+                      if (open) {
+                        setActiveContextCell(`month-header-${m}`);
+                      } else {
+                        setActiveContextCell(null);
+                      }
+                    }}
                   >
-                    {m}월
-                  </TableHead>
+                    <ContextMenuTrigger asChild>
+                      <TableHead className={`text-center h-12 w-20 border-r border-b border-dashed border-gray-300 bg-slate-100 cursor-pointer transition-colors ${
+                        activeContextCell === `month-header-${m}` ? "bg-green-100" : ""
+                      }`}>
+                        {m}월
+                      </TableHead>
+                    </ContextMenuTrigger>
+                    <ContextMenuContent>
+                      <ContextMenuItem
+                        onClick={async () => await copyText(`${m}월`)}
+                      >
+                        복사
+                      </ContextMenuItem>
+                    </ContextMenuContent>
+                  </ContextMenu>
                 ))}
-                <TableHead className="text-center h-12 w-24 border-b border-dashed border-gray-300 bg-slate-100">
-                  총계
-                </TableHead>
+                <ContextMenu
+                  onOpenChange={(open) => {
+                    if (open) {
+                      setActiveContextCell("total-header");
+                    } else {
+                      setActiveContextCell(null);
+                    }
+                  }}
+                >
+                  <ContextMenuTrigger asChild>
+                    <TableHead className={`text-center h-12 w-24 border-b border-dashed border-gray-300 bg-slate-100 cursor-pointer transition-colors ${
+                      activeContextCell === "total-header" ? "bg-green-100" : ""
+                    }`}>
+                      총계
+                    </TableHead>
+                  </ContextMenuTrigger>
+                  <ContextMenuContent>
+                    <ContextMenuItem
+                      onClick={async () => await copyText("총계")}
+                    >
+                      복사
+                    </ContextMenuItem>
+                  </ContextMenuContent>
+                </ContextMenu>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -488,52 +583,94 @@ export function RecipientPivot({ filteredData }: RecipientPivotProps) {
                       rowsOut.push(
                         <TableRow key={`${g.recipient}__${row.year}`}>
                           {localIdx === 0 && (
-                            <TableCell
-                              rowSpan={span}
-                              className="align-middle text-center w-32 border-r border-b border-dashed border-gray-300 bg-muted"
+                            <ContextMenu
+                              onOpenChange={(open) => {
+                                if (open) {
+                                  setActiveContextCell(`recipient-${g.recipient}`);
+                                } else {
+                                  setActiveContextCell(null);
+                                }
+                              }}
                             >
-                              <div className="flex items-center justify-center gap-1">
-                                <button
-                                  onClick={() => toggleRecipient(g.recipient)}
-                                  className="flex items-center justify-center w-4 h-4 bg-gray-200 hover:bg-gray-300 rounded-sm transition-colors"
+                              <ContextMenuTrigger asChild>
+                                <TableCell
+                                  rowSpan={span}
+                                  className={`align-middle text-center w-32 border-r border-dashed border-gray-300 bg-muted cursor-pointer transition-colors ${
+                                    activeContextCell === `recipient-${g.recipient}` ? "bg-green-100" : ""
+                                  }`}
                                 >
-                                  {expandedRecipients[g.recipient] ? (
-                                    <svg
-                                      className="w-2.5 h-2.5"
-                                      fill="none"
-                                      stroke="currentColor"
-                                      viewBox="0 0 24 24"
+                                  <div className="flex items-center justify-center gap-1">
+                                    <button
+                                      onClick={() => toggleRecipient(g.recipient)}
+                                      className="flex items-center justify-center w-4 h-4 bg-gray-200 hover:bg-gray-300 rounded-sm transition-colors"
                                     >
-                                      <path
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                        strokeWidth={2}
-                                        d="M20 12H4"
-                                      />
-                                    </svg>
-                                  ) : (
-                                    <svg
-                                      className="w-2.5 h-2.5"
-                                      fill="none"
-                                      stroke="currentColor"
-                                      viewBox="0 0 24 24"
-                                    >
-                                      <path
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                        strokeWidth={2}
-                                        d="M12 6v6m0 0v6m0-6h6m-6 0H6"
-                                      />
-                                    </svg>
-                                  )}
-                                </button>
-                                <span className="truncate">{g.recipient}</span>
-                              </div>
-                            </TableCell>
+                                      {expandedRecipients[g.recipient] ? (
+                                        <svg
+                                          className="w-2.5 h-2.5"
+                                          fill="none"
+                                          stroke="currentColor"
+                                          viewBox="0 0 24 24"
+                                        >
+                                          <path
+                                            strokeLinecap="round"
+                                            strokeLinejoin="round"
+                                            strokeWidth={2}
+                                            d="M20 12H4"
+                                          />
+                                        </svg>
+                                      ) : (
+                                        <svg
+                                          className="w-2.5 h-2.5"
+                                          fill="none"
+                                          stroke="currentColor"
+                                          viewBox="0 0 24 24"
+                                        >
+                                          <path
+                                            strokeLinecap="round"
+                                            strokeLinejoin="round"
+                                            strokeWidth={2}
+                                            d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+                                          />
+                                        </svg>
+                                      )}
+                                    </button>
+                                    <span className="truncate">{g.recipient}</span>
+                                  </div>
+                                </TableCell>
+                              </ContextMenuTrigger>
+                              <ContextMenuContent>
+                                <ContextMenuItem
+                                  onClick={async () => await copyText(g.recipient)}
+                                >
+                                  복사
+                                </ContextMenuItem>
+                              </ContextMenuContent>
+                            </ContextMenu>
                           )}
-                          <TableCell className="font-medium bg-muted text-center w-20 border-r border-b border-dashed border-gray-300">
-                            {row.year}
-                          </TableCell>
+                          <ContextMenu
+                            onOpenChange={(open) => {
+                              if (open) {
+                                setActiveContextCell(`year-${g.recipient}-${row.year}`);
+                              } else {
+                                setActiveContextCell(null);
+                              }
+                            }}
+                          >
+                            <ContextMenuTrigger asChild>
+                              <TableCell className={`font-medium bg-muted text-center w-20 border-r border-b border-dashed border-gray-300 cursor-pointer transition-colors ${
+                                activeContextCell === `year-${g.recipient}-${row.year}` ? "bg-green-100" : ""
+                              }`}>
+                                {row.year}
+                              </TableCell>
+                            </ContextMenuTrigger>
+                            <ContextMenuContent>
+                              <ContextMenuItem
+                                onClick={async () => await copyText(row.year.toString())}
+                              >
+                                복사
+                              </ContextMenuItem>
+                            </ContextMenuContent>
+                          </ContextMenu>
                           {Array.from({ length: 12 }, (_, i) => i + 1).map(
                             (m) => {
                               const cellId = getCellId(
@@ -604,14 +741,15 @@ export function RecipientPivot({ filteredData }: RecipientPivotProps) {
                                         (!isDragging || !inDragRect) &&
                                         (() => {
                                           // 인접한 선택된 셀들 확인해서 외곽 테두리만 표시
-                                          const topRowIndex = rowIndexMap.get(`${g.recipient}-${row.year - 1}`) ?? -1;
-                                          const bottomRowIndex = rowIndexMap.get(`${g.recipient}-${row.year + 1}`) ?? -1;
+                                          const currentRowIndex = rowIndexMap.get(`${g.recipient}-${row.year}`) ?? -1;
+                                          const topRow = currentRowIndex > 0 ? flatRows[currentRowIndex - 1] : null;
+                                          const bottomRow = currentRowIndex < flatRows.length - 1 ? flatRows[currentRowIndex + 1] : null;
                                           
-                                          const topSel = topRowIndex !== -1 && selectedCells.has(
-                                            getCellId(g.recipient, row.year - 1, m)
+                                          const topSel = topRow && topRow.recipient === g.recipient && selectedCells.has(
+                                            getCellId(topRow.recipient, topRow.year, m)
                                           );
-                                          const bottomSel = bottomRowIndex !== -1 && selectedCells.has(
-                                            getCellId(g.recipient, row.year + 1, m)
+                                          const bottomSel = bottomRow && bottomRow.recipient === g.recipient && selectedCells.has(
+                                            getCellId(bottomRow.recipient, bottomRow.year, m)
                                           );
                                           const leftSel = selectedCells.has(
                                             getCellId(g.recipient, row.year, m - 1)
@@ -800,9 +938,30 @@ export function RecipientPivot({ filteredData }: RecipientPivotProps) {
                         key={`${g.recipient}__total`}
                         className="bg-muted"
                       >
-                        <TableCell className="font-medium text-center w-20 border-r border-b border-dashed border-gray-300 !bg-muted">
-                          총계
-                        </TableCell>
+                        <ContextMenu
+                          onOpenChange={(open) => {
+                            if (open) {
+                              setActiveContextCell(`recipient-total-${g.recipient}`);
+                            } else {
+                              setActiveContextCell(null);
+                            }
+                          }}
+                        >
+                          <ContextMenuTrigger asChild>
+                            <TableCell className={`font-medium text-center w-20 border-r border-dashed border-gray-300 cursor-pointer transition-colors ${
+                              activeContextCell === `recipient-total-${g.recipient}` ? "bg-green-100" : "!bg-muted"
+                            }`}>
+                              총계
+                            </TableCell>
+                          </ContextMenuTrigger>
+                          <ContextMenuContent>
+                            <ContextMenuItem
+                              onClick={async () => await copyText("총계")}
+                            >
+                              복사
+                            </ContextMenuItem>
+                          </ContextMenuContent>
+                        </ContextMenu>
                         {recTotalsByMonth.map(({ m, cnt, amt }) => (
                           <ContextMenu
                             key={m}
@@ -818,7 +977,7 @@ export function RecipientPivot({ filteredData }: RecipientPivotProps) {
                           >
                             <ContextMenuTrigger asChild>
                               <TableCell
-                                className={`text-center w-20 border-r border-b border-dashed border-gray-300 cursor-pointer transition-colors bg-slate-200 ${
+                                className={`text-center w-20 border-r border-dashed border-gray-300 cursor-pointer transition-colors bg-slate-200 ${
                                   activeContextCell ===
                                   `expanded-${g.recipient}-${m}`
                                     ? "bg-green-100"
@@ -878,7 +1037,7 @@ export function RecipientPivot({ filteredData }: RecipientPivotProps) {
                         >
                           <ContextMenuTrigger asChild>
                             <TableCell
-                              className={`text-center w-24 border-b border-dashed border-gray-300 cursor-pointer transition-colors bg-slate-200 ${
+                              className={`text-center w-24 cursor-pointer transition-colors bg-slate-200 ${
                                 activeContextCell ===
                                 `expanded-${g.recipient}-total`
                                   ? "bg-green-100"
@@ -954,52 +1113,94 @@ export function RecipientPivot({ filteredData }: RecipientPivotProps) {
                         key={`${g.recipient}__collapsed`}
                         className="bg-muted"
                       >
-                        <TableCell className="text-center w-32 border-r border-b border-dashed border-gray-300 bg-muted">
-                          <div className="flex items-center justify-center gap-1">
-                            <button
-                              onClick={() => toggleRecipient(g.recipient)}
-                              className="flex items-center justify-center w-4 h-4 bg-gray-200 hover:bg-gray-300 rounded-sm transition-colors"
+                        <ContextMenu
+                          onOpenChange={(open) => {
+                            if (open) {
+                              setActiveContextCell(`recipient-collapsed-${g.recipient}`);
+                            } else {
+                              setActiveContextCell(null);
+                            }
+                          }}
+                        >
+                          <ContextMenuTrigger asChild>
+                            <TableCell className={`text-center w-32 border-r border-b border-dashed border-gray-300 bg-muted cursor-pointer transition-colors ${
+                              activeContextCell === `recipient-collapsed-${g.recipient}` ? "bg-green-100" : ""
+                            }`}>
+                              <div className="flex items-center justify-center gap-1">
+                                <button
+                                  onClick={() => toggleRecipient(g.recipient)}
+                                  className="flex items-center justify-center w-4 h-4 bg-gray-200 hover:bg-gray-300 rounded-sm transition-colors"
+                                >
+                                  {expandedRecipients[g.recipient] ? (
+                                    <svg
+                                      className="w-2.5 h-2.5"
+                                      fill="none"
+                                      stroke="currentColor"
+                                      viewBox="0 0 24 24"
+                                    >
+                                      <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        strokeWidth={2}
+                                        d="M20 12H4"
+                                      />
+                                    </svg>
+                                  ) : (
+                                    <svg
+                                      className="w-2.5 h-2.5"
+                                      fill="none"
+                                      stroke="currentColor"
+                                      viewBox="0 0 24 24"
+                                    >
+                                      <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        strokeWidth={2}
+                                        d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+                                      />
+                                    </svg>
+                                  )}
+                                </button>
+                                <span className="truncate">{g.recipient}</span>
+                              </div>
+                            </TableCell>
+                          </ContextMenuTrigger>
+                          <ContextMenuContent>
+                            <ContextMenuItem
+                              onClick={async () => await copyText(g.recipient)}
                             >
-                              {expandedRecipients[g.recipient] ? (
-                                <svg
-                                  className="w-2.5 h-2.5"
-                                  fill="none"
-                                  stroke="currentColor"
-                                  viewBox="0 0 24 24"
-                                >
-                                  <path
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    strokeWidth={2}
-                                    d="M20 12H4"
-                                  />
-                                </svg>
-                              ) : (
-                                <svg
-                                  className="w-2.5 h-2.5"
-                                  fill="none"
-                                  stroke="currentColor"
-                                  viewBox="0 0 24 24"
-                                >
-                                  <path
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    strokeWidth={2}
-                                    d="M12 6v6m0 0v6m0-6h6m-6 0H6"
-                                  />
-                                </svg>
-                              )}
-                            </button>
-                            <span className="truncate">{g.recipient}</span>
-                          </div>
-                        </TableCell>
-                        <TableCell className="font-medium text-center w-20 border-r border-b border-dashed border-gray-300 !bg-muted">
-                          총계
-                        </TableCell>
+                              복사
+                            </ContextMenuItem>
+                          </ContextMenuContent>
+                        </ContextMenu>
+                        <ContextMenu
+                          onOpenChange={(open) => {
+                            if (open) {
+                              setActiveContextCell(`total-collapsed-${g.recipient}`);
+                            } else {
+                              setActiveContextCell(null);
+                            }
+                          }}
+                        >
+                          <ContextMenuTrigger asChild>
+                            <TableCell className={`font-medium text-center w-20 border-r border-dashed border-gray-300 cursor-pointer transition-colors ${
+                              activeContextCell === `total-collapsed-${g.recipient}` ? "bg-green-100" : "!bg-muted"
+                            }`}>
+                              총계
+                            </TableCell>
+                          </ContextMenuTrigger>
+                          <ContextMenuContent>
+                            <ContextMenuItem
+                              onClick={async () => await copyText("총계")}
+                            >
+                              복사
+                            </ContextMenuItem>
+                          </ContextMenuContent>
+                        </ContextMenu>
                         {recTotalsByMonth.map(({ m, cnt, amt }) => (
                           <ContextMenu key={m}>
                             <ContextMenuTrigger asChild>
-                              <TableCell className="text-center w-20 border-r border-b border-dashed border-gray-300 cursor-pointer transition-colors bg-slate-200">
+                              <TableCell className="text-center w-20 border-r border-dashed border-gray-300 cursor-pointer transition-colors bg-slate-200">
                                 {cnt === 0 && amt === 0 ? (
                                   <div className="text-sm text-center text-muted-foreground">
                                     -
@@ -1042,7 +1243,7 @@ export function RecipientPivot({ filteredData }: RecipientPivotProps) {
                         ))}
                         <ContextMenu>
                           <ContextMenuTrigger asChild>
-                            <TableCell className="text-center w-24 border-b border-dashed border-gray-300 cursor-pointer transition-colors bg-slate-200">
+                            <TableCell className="text-center w-24 cursor-pointer transition-colors bg-slate-200">
                               {recTotalCnt === 0 && recTotalAmt === 0 ? (
                                 <span>-</span>
                               ) : (
@@ -1089,7 +1290,7 @@ export function RecipientPivot({ filteredData }: RecipientPivotProps) {
                     rowsOut.push(
                       <TableRow key={`sep-${g.recipient}`}>
                         <TableCell colSpan={15} className="p-0">
-                          <div className="h-px border-t border-gray-300" />
+                          <div className="h-px bg-gray-300" />
                         </TableCell>
                       </TableRow>
                     );
@@ -1102,12 +1303,33 @@ export function RecipientPivot({ filteredData }: RecipientPivotProps) {
                 className="bg-slate-100 hover:bg-slate-100"
                 style={{ borderTop: "2px solid #9CA3AF" }}
               >
-                <TableCell
-                  colSpan={2}
-                  className="font-bold text-center border-r border-b border-dashed border-gray-300 bg-muted"
+                <ContextMenu
+                  onOpenChange={(open) => {
+                    if (open) {
+                      setActiveContextCell("grand-total-label");
+                    } else {
+                      setActiveContextCell(null);
+                    }
+                  }}
                 >
-                  전체 총계
-                </TableCell>
+                  <ContextMenuTrigger asChild>
+                    <TableCell
+                      colSpan={2}
+                      className={`font-bold text-center border-r border-dashed border-gray-300 bg-muted cursor-pointer transition-colors ${
+                        activeContextCell === "grand-total-label" ? "bg-green-100" : ""
+                      }`}
+                    >
+                      전체 총계
+                    </TableCell>
+                  </ContextMenuTrigger>
+                  <ContextMenuContent>
+                    <ContextMenuItem
+                      onClick={async () => await copyText("전체 총계")}
+                    >
+                      복사
+                    </ContextMenuItem>
+                  </ContextMenuContent>
+                </ContextMenu>
                 {Array.from({ length: 12 }, (_, i) => i + 1).map((m) => (
                   <ContextMenu
                     key={m}
@@ -1121,7 +1343,7 @@ export function RecipientPivot({ filteredData }: RecipientPivotProps) {
                   >
                     <ContextMenuTrigger asChild>
                       <TableCell
-                        className={`text-center w-20 border-r border-b border-dashed border-gray-300 cursor-pointer transition-colors ${
+                        className={`text-center w-20 border-r border-dashed border-gray-300 cursor-pointer transition-colors ${
                           activeContextCell === `grand-total-${m}`
                             ? "bg-green-100"
                             : ""
@@ -1179,7 +1401,7 @@ export function RecipientPivot({ filteredData }: RecipientPivotProps) {
                 >
                   <ContextMenuTrigger asChild>
                     <TableCell
-                      className={`text-center w-24 border-b border-dashed border-gray-300 cursor-pointer transition-colors ${
+                      className={`text-center w-24 cursor-pointer transition-colors ${
                         activeContextCell === "grand-total-total"
                           ? "bg-green-100"
                           : ""
